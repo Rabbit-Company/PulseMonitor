@@ -12,7 +12,9 @@ Features:
 Before running Pulse Monitor, make sure to create `config.toml` file and configure all monitors.
 
 ```toml
-# Example for monitoring MySQL
+#
+# START MySQL
+#
 [[monitors]]
 enabled = true
 name = "MySQL"
@@ -25,7 +27,9 @@ url = ""
 [monitors.mysql]
 url = "mysql://username:password@localhost:3306/db_name"
 
-# Example for monitoring PostgreSQL
+#
+# START PostgreSQL
+#
 [[monitors]]
 enabled = true
 name = "PostgreSQL"
@@ -38,7 +42,9 @@ url = ""
 [monitors.postgresql]
 url = "postgresql://username:password@localhost:5432/db_name"
 
-# Example for monitoring Redis
+#
+# START Redis
+#
 [[monitors]]
 enabled = true
 name = "Redis"
@@ -68,7 +74,7 @@ pulsemonitor --config ./config.toml
 
 Running Pulse Monitor in the background is a simple task, just make sure that it runs without errors before doing this. Place the contents below in a file called `pulsemonitor.service` in the `/etc/systemd/system/` directory.
 
-```toml
+```service
 [Unit]
 Description=Pulse Monitor 
 After=network.target
