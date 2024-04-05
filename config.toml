@@ -35,12 +35,3 @@ url = ""
 
 [monitors.redis]
 url = "redis://username:password@localhost:6379/db_name"
-
-[[monitors]]
-enabled = true
-name = "PulseMonitor"
-execute_every = 10
-
-[monitors.heartbeat]
-method = "GET"
-url = ""
