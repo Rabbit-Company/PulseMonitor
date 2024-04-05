@@ -1,0 +1,20 @@
+[package]
+name = "pulse_monitor"
+version = "1.0.0"
+authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
+description = "Simple pulse monitor"
+edition = "2021"
+repository = "https://github.com/Rabbit-Company/PulseMonitor"
+license = "GPL-3.0"
+readme = "README.md"
+rust-version = "1.68.2"
+categories = ["command-line-utilities"]
+keywords = ["cli", "process-monitoring"]
+publish = ["pulsemonitor"]
+
+[dependencies]
+clap = {version = "4.5", features = ["derive"]}
+redis = { version = "0.25", features = ["tokio-comp", "tokio-native-tls-comp"] }
+serde = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+toml = "0.8"

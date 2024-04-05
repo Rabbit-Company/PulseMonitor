@@ -1,0 +1,30 @@
+[[monitors]]
+# Do you want this monitor to be enabled?
+enabled = true
+# Name of the monitor
+name = "MySQL"
+# Execute task every X seconds
+execute_every = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+
+[monitors.mysql]
+url = "mysql://root:password@localhost:3306/db_name"
+
+
+[[monitors]]
+# Do you want this monitor to be enabled?
+enabled = true
+# Name of the monitor
+name = "Redis"
+# Execute task every X seconds
+execute_every = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+
+[monitors.redis]
+url = "redis://[<username>][:<password>@]<hostname>[:port][/<db>]"
