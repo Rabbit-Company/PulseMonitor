@@ -55,7 +55,7 @@ async fn main() {
 				println!("{color_cyan}  - {colored_name}{} {color_black}({}s) - {color_blue}MySQL", monitor.name, monitor.execute_every);
 			}
 			Specific::Redis { url } => {
-				println!("{color_cyan}  - {colored_name}{} {color_black}({}s) - {color_blue}MySQL", monitor.name, monitor.execute_every);
+				println!("{color_cyan}  - {colored_name}{} {color_black}({}s) - {color_blue}Redis", monitor.name, monitor.execute_every);
 			}
 		}
 	}
