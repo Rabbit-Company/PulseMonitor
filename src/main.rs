@@ -77,11 +77,11 @@ async fn main() {
 			});
 		}
 
-		sleep(std::time::Duration::from_secs(1)).await;
+		sleep(Duration::from_secs(1)).await;
 	}
 
 	loop {
-		sleep(std::time::Duration::from_secs(1)).await;
+		sleep(Duration::from_secs(1)).await;
 	}
 
 }
