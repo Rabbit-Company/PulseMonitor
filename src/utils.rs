@@ -11,10 +11,11 @@ pub struct Config {
 pub struct Monitor {
 	pub enabled: bool,
 	#[serde(rename = "execute_every")]
-	pub execute_every: i64,
+	pub execute_every: u64,
 	pub name: String,
 	pub heartbeat: Heartbeat,
 	pub mysql: Option<Mysql>,
+	pub postgresql: Option<PostgreSQL>,
 	pub redis: Option<Redis>
 }
 
@@ -28,6 +29,12 @@ pub struct Heartbeat {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Mysql {
+	pub url: String
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PostgreSQL {
 	pub url: String
 }
 
