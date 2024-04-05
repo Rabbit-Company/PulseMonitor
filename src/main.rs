@@ -75,6 +75,16 @@ async fn main() {
 					});
 				}
 			});
+		}else{
+			thread::spawn(move || {
+				println!("{color_cyan}  - {color_green}{} {color_black}({}s) - {color_blue}None", monitor.name, monitor.execute_every);
+				loop {
+					tokio::runtime::Runtime::new().unwrap().block_on(async {
+						send_heartbeat(&monitor).await.ok();
+						sleep(Duration::from_secs(monitor.execute_every)).await;
+					});
+				}
+			});
 		}
 
 		sleep(Duration::from_secs(1)).await;

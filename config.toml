@@ -1,9 +1,6 @@
 [[monitors]]
-# Do you want this monitor to be enabled?
 enabled = true
-# Name of the monitor
 name = "MySQL"
-# Execute task every X seconds
 execute_every = 10
 
 [monitors.heartbeat]
@@ -15,11 +12,8 @@ url = "mysql://username:password@localhost:3306/db_name"
 
 
 [[monitors]]
-# Do you want this monitor to be enabled?
 enabled = true
-# Name of the monitor
 name = "PostgreSQL"
-# Execute task every X seconds
 execute_every = 10
 
 [monitors.heartbeat]
@@ -31,11 +25,8 @@ url = "postgresql://username:password@localhost:5432/db_name"
 
 
 [[monitors]]
-# Do you want this monitor to be enabled?
 enabled = true
-# Name of the monitor
 name = "Redis"
-# Execute task every X seconds
 execute_every = 10
 
 [monitors.heartbeat]
@@ -44,3 +35,12 @@ url = ""
 
 [monitors.redis]
 url = "redis://username:password@localhost:6379/db_name"
+
+[[monitors]]
+enabled = true
+name = "PulseMonitor"
+execute_every = 10
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
