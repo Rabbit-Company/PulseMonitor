@@ -63,7 +63,7 @@ url = "redis://username:password@localhost:6379/db_name"
 # Download the binary
 wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
 # Set file permissions
-sudo chmod 777 pulsemonitor
+sudo chmod 755 pulsemonitor
 # Place the binary to `/usr/local/bin`
 sudo mv pulsemonitor /usr/local/bin
 # Start the monitor and don't forget to change the path to your config.toml file
@@ -105,7 +105,7 @@ systemctl stop pulsemonitor
 
 # Download Pulse Monitor
 wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
-sudo chmod 777 pulsemonitor
+sudo chmod 755 pulsemonitor
 sudo mv pulsemonitor /usr/local/bin
 
 # Start service
