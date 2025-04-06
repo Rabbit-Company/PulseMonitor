@@ -1,10 +1,10 @@
 # PulseMonitor
 
-This Rust program serves as a simple monitoring tool for HTTP, MySQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
+This Rust program serves as a simple monitoring tool for HTTP, ICMP, TCP, UDP, MySQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
 
 Features:
 
-- Monitor HTTP, MySQL, PostgreSQL and Redis
+- Monitor HTTP, ICMP, TCP, UDP, MySQL, PostgreSQL and Redis
 - Sends regular pulses to specified uptime monitors
 - Easily configurable via `config.toml` file
 
@@ -19,14 +19,15 @@ Before running Pulse Monitor, make sure to create `config.toml` file and configu
 [[monitors]]
 enabled = true
 name = "rabbit-company.com"
-execute_every = 10
+interval = 10
+debug = false
 
 [monitors.heartbeat]
 method = "GET"
 url = ""
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 ]
 
 [monitors.http]
@@ -34,8 +35,75 @@ method = "GET"
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 ]
+
+#
+# START TCP
+#
+[[monitors]]
+enabled = true
+name = "TCP"
+interval = 10
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
+
+[monitors.tcp]
+host = "127.0.0.1"
+port = 8080
+timeout = 3
+
+#
+# START UDP
+#
+[[monitors]]
+enabled = true
+name = "UDP"
+interval = 10
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
+
+[monitors.udp]
+host = "127.0.0.1"
+port = 9000
+timeout = 2
+payload = "ping"
+expect_response = true
+
+#
+# START ICMP
+#
+[[monitors]]
+enabled = true
+name = "ICMP"
+interval = 10
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
+
+[monitors.icmp]
+host = "8.8.8.8"
+timeout = 2
 
 #
 # START MySQL
@@ -43,14 +111,15 @@ headers = [
 [[monitors]]
 enabled = true
 name = "MySQL"
-execute_every = 10
+interval = 10
+debug = false
 
 [monitors.heartbeat]
 method = "GET"
 url = ""
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 ]
 
 [monitors.mysql]
@@ -62,14 +131,15 @@ url = "mysql://username:password@localhost:3306/db_name"
 [[monitors]]
 enabled = true
 name = "PostgreSQL"
-execute_every = 10
+interval = 10
+debug = false
 
 [monitors.heartbeat]
 method = "GET"
 url = ""
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 ]
 
 [monitors.postgresql]
@@ -81,14 +151,15 @@ url = "postgresql://username:password@localhost:5432/db_name"
 [[monitors]]
 enabled = true
 name = "Redis"
-execute_every = 10
+interval = 10
+debug = false
 
 [monitors.heartbeat]
 method = "GET"
 url = ""
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.0.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 ]
 
 [monitors.redis]
@@ -99,7 +170,7 @@ url = "redis://username:password@localhost:6379/db_name"
 
 ```bash
 # Download the binary
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.1.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.0.0/pulsemonitor
 # Set file permissions
 sudo chmod 755 pulsemonitor
 # Place the binary to `/usr/local/bin`
@@ -142,7 +213,7 @@ systemctl enable --now pulsemonitor
 systemctl stop pulsemonitor
 
 # Download Pulse Monitor
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.1.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.0.0/pulsemonitor
 sudo chmod 755 pulsemonitor
 sudo mv pulsemonitor /usr/local/bin
 

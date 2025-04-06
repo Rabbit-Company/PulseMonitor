@@ -1,19 +1,23 @@
 use std::fs;
+use tracing::error;
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
-use services::http::is_http_online;
+use services::{http::is_http_online, icmp::is_icmp_online, tcp::is_tcp_online, udp::is_udp_online};
 use utils::{Config, VERSION};
 use crate::services::mysql::is_mysql_online;
 use crate::services::postgresql::is_postgresql_online;
 use crate::services::redis::is_redis_online;
 use crate::heartbeat::send_heartbeat;
 use tokio::time::{sleep, Duration};
-use inline_colorization::{color_blue,color_white};
+use inline_colorization::{color_blue,color_white,color_reset};
 
 mod utils;
 mod heartbeat;
 mod services {
 	pub mod http;
+	pub mod tcp;
+	pub mod udp;
+	pub mod icmp;
 	pub mod mysql;
 	pub mod postgresql;
 	pub mod redis;
@@ -29,22 +33,30 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
+	tracing_subscriber::fmt::init();
+
 	let args: Args = Args::parse();
 	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
 	let config: Config = toml::from_str(&toml_string).expect("Failed to parse TOML from config file");
 
-	println!("{color_blue}PulseMonitor {}", VERSION);
+	println!("{color_blue}PulseMonitor {}{color_reset}\n", VERSION);
 
 	let mut rows: Vec<Vec<Cell>> = Vec::new();
 
 	for monitor in config.monitors {
 		if !monitor.enabled { continue; }
 
-		let interval = monitor.execute_every;
+		let interval = monitor.interval;
 		let cloned_monitor = monitor.clone();
 
 		let service_type = if monitor.http.is_some() {
 			"HTTP"
+		} else if monitor.tcp.is_some() {
+			"TCP"
+		} else if monitor.udp.is_some() {
+			"UDP"
+		} else if monitor.icmp.is_some() {
+			"ICMP"
 		} else if monitor.mysql.is_some() {
 			"MySQL"
 		} else if monitor.postgresql.is_some() {
@@ -57,7 +69,7 @@ async fn main() {
 
 		rows.push(vec![
 			Cell::new(service_type).fg(Color::Blue),
-			Cell::new(format!("{}s", monitor.execute_every)).fg(Color::DarkGrey),
+			Cell::new(format!("{}s", monitor.interval)).fg(Color::DarkGrey),
 			Cell::new(monitor.name).fg(Color::Green),
 		]);
 
@@ -65,6 +77,12 @@ async fn main() {
 			loop {
 				let result = if cloned_monitor.http.is_some() {
 					is_http_online(&cloned_monitor).await
+				} else if cloned_monitor.tcp.is_some() {
+					is_tcp_online(&cloned_monitor).await
+				} else if cloned_monitor.udp.is_some() {
+					is_udp_online(&cloned_monitor).await
+				} else if cloned_monitor.icmp.is_some() {
+					is_icmp_online(&cloned_monitor).await
 				} else if cloned_monitor.mysql.is_some() {
 					is_mysql_online(&cloned_monitor).await
 				} else if cloned_monitor.postgresql.is_some() {
@@ -75,7 +93,15 @@ async fn main() {
 					Ok(())
 				};
 
-				if result.is_ok() {
+				if let Err(err) = result {
+					if cloned_monitor.debug.unwrap_or(false) {
+						error!(
+							"Monitor '{}' failed: {}",
+							cloned_monitor.name,
+							err
+						);
+					}
+				} else {
 					let _ = send_heartbeat(&cloned_monitor).await;
 				}
 
@@ -98,7 +124,7 @@ async fn main() {
 		.set_header(vec!["Service", "Interval (s)", "Name"])
 		.add_rows(rows);
 
-	println!("\n{color_white}{}", table);
+	println!("\n{color_white}{}{color_reset}\n", table);
 
 	loop {
 		sleep(Duration::from_secs(3600)).await;

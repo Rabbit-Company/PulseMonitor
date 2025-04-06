@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 
-pub const VERSION: &str = "v2.1.0";
+pub const VERSION: &str = "v3.0.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -14,19 +14,22 @@ pub struct Config {
 #[serde(rename_all = "camelCase")]
 pub struct Monitor {
 	pub enabled: bool,
-	#[serde(rename = "execute_every")]
-	pub execute_every: u64,
+	pub interval: u64,
 	pub name: String,
-	pub heartbeat: Heartbeat,
-	pub http: Option<Http>,
-	pub mysql: Option<Mysql>,
-	pub postgresql: Option<PostgreSQL>,
-	pub redis: Option<Redis>
+	pub heartbeat: HeartbeatConfig,
+	pub debug: Option<bool>,
+	pub http: Option<HttpConfig>,
+	pub tcp: Option<TcpConfig>,
+	pub udp: Option<UdpConfig>,
+	pub icmp: Option<IcmpConfig>,
+	pub mysql: Option<MysqlConfig>,
+	pub postgresql: Option<PostgreSqlConfig>,
+	pub redis: Option<RedisConfig>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Heartbeat {
+pub struct HeartbeatConfig {
 	pub method: String,
 	pub url: String,
 	pub headers: Option<Vec<HashMap<String, String>>>,
@@ -34,26 +37,51 @@ pub struct Heartbeat {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Mysql {
+pub struct MysqlConfig {
 	pub url: String
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PostgreSQL {
+pub struct PostgreSqlConfig {
 	pub url: String
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Redis {
+pub struct RedisConfig {
 	pub url: String
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Http {
+pub struct HttpConfig {
 	pub method: String,
 	pub url: String,
 	pub headers: Option<Vec<HashMap<String, String>>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TcpConfig {
+	pub host: String,
+	pub port: u16,
+	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UdpConfig {
+	pub host: String,
+	pub port: u16,
+	pub timeout: Option<u64>,
+	pub payload: Option<String>,
+	pub expect_response: Option<bool>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IcmpConfig {
+	pub host: String,
+	pub timeout: Option<u64>,
 }
