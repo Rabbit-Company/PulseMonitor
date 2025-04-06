@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build target ${{ matrix.target }} on ${{ matrix.os }} for ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          #- x86_64-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+          #- aarch64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+        toolchain: [stable]
+        include:
+          #- target: x86_64-unknown-linux-musl
+          #  os: ubuntu-24.04
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          #- target: aarch64-unknown-linux-musl
+          #  os: ubuntu-24.04-arm
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          targets: ${{ matrix.target }}
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+        
+      - name: cargo build
+        run: cargo build --release --target=${{ matrix.target }}
+        
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/pulsemonitor
