@@ -42,5 +42,5 @@ jobs:
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pulsemonitor
+          name: ${{ matrix.target }}
           path: target/${{ matrix.target }}/release/pulsemonitor
