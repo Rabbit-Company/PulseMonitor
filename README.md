@@ -94,7 +94,7 @@ url = "redis://username:password@localhost:6379/db_name"
 
 ```bash
 # Download the binary
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.0.0/pulsemonitor
 # Set file permissions
 sudo chmod 755 pulsemonitor
 # Place the binary to `/usr/local/bin`
@@ -137,7 +137,7 @@ systemctl enable --now pulsemonitor
 systemctl stop pulsemonitor
 
 # Download Pulse Monitor
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.0.0/pulsemonitor
 sudo chmod 755 pulsemonitor
 sudo mv pulsemonitor /usr/local/bin
 
