@@ -1,10 +1,10 @@
 # PulseMonitor
 
-This Rust program serves as a simple monitoring tool for MySQL, PostgreSQL and Redis databases. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
+This Rust program serves as a simple monitoring tool for HTTP, MySQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
 
 Features:
 
-- Monitor MySQL, PostgreSQL and Redis databases
+- Monitor HTTP, MySQL, PostgreSQL and Redis
 - Sends regular pulses to specified uptime monitors
 - Easily configurable via `config.toml` file
 
