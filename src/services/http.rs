@@ -1,8 +1,7 @@
 use std::error::Error;
-use base64::{engine::general_purpose, Engine};
-use reqwest::{header::{AUTHORIZATION, USER_AGENT}, Client};
+use reqwest::Client;
 
-use crate::utils::{Monitor, VERSION};
+use crate::utils::Monitor;
 
 pub async fn is_http_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let http = monitor
@@ -17,15 +16,14 @@ pub async fn is_http_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Sen
 		"POST" => client.post(&http.url),
 		"HEAD" => client.head(&http.url),
 		_ => return Err(format!("Unsupported HTTP method: {}", http.method).into())
-	}
-	.header(USER_AGENT, format!("PulseMonitor {}", VERSION));
+	};
 
-	if let Some(token) = &http.bearer_token {
-		request = request.header(AUTHORIZATION, format!("Bearer {}", token));
-	} else if let (Some(username), Some(password)) = (&http.username, &http.password) {
-		let auth_value = format!("{}:{}", username, password);
-		let encoded = general_purpose::STANDARD.encode(auth_value);
-		request = request.header(AUTHORIZATION, format!("Basic {}", encoded));
+	if let Some(headers) = &http.headers {
+		for header in headers {
+			for (key, value) in header {
+				request = request.header(key, value);
+			}
+		}
 	}
 
 	let response = request.send().await?;

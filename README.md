@@ -24,16 +24,18 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
-#bearer_token = "" (optional)
-#username = "" (optional)
-#password = "" (optional)
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
 
 [monitors.http]
 method = "GET"
 url = "https://rabbit-company.com"
-#bearer_token = "" (optional)
-#username = "" (optional)
-#password = "" (optional)
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
 
 #
 # START MySQL
@@ -46,9 +48,10 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
-#bearer_token = "" (optional)
-#username = "" (optional)
-#password = "" (optional)
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
 
 [monitors.mysql]
 url = "mysql://username:password@localhost:3306/db_name"
@@ -64,9 +67,10 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
-#bearer_token = "" (optional)
-#username = "" (optional)
-#password = "" (optional)
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
 
 [monitors.postgresql]
 url = "postgresql://username:password@localhost:5432/db_name"
@@ -82,9 +86,10 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
-#bearer_token = "" (optional)
-#username = "" (optional)
-#password = "" (optional)
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/2.1.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+]
 
 [monitors.redis]
 url = "redis://username:password@localhost:6379/db_name"
@@ -94,7 +99,7 @@ url = "redis://username:password@localhost:6379/db_name"
 
 ```bash
 # Download the binary
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.1.0/pulsemonitor
 # Set file permissions
 sudo chmod 755 pulsemonitor
 # Place the binary to `/usr/local/bin`
@@ -137,7 +142,7 @@ systemctl enable --now pulsemonitor
 systemctl stop pulsemonitor
 
 # Download Pulse Monitor
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v2.1.0/pulsemonitor
 sudo chmod 755 pulsemonitor
 sudo mv pulsemonitor /usr/local/bin
 

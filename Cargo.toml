@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2021"
@@ -13,7 +13,6 @@ keywords = ["cli", "process-monitoring"]
 publish = ["pulsemonitor"]
 
 [dependencies]
-base64 = "0.22"
 comfy-table = "7.1"
 clap = { version = "4.5", features = ["derive"] }
 inline_colorization = "0.1.6"
@@ -31,3 +30,8 @@ sqlx = { version = "0.8", features = [
 	"mysql",
 	"postgres",
 ] }
+
+# Dependencies to fix security vulnerabilities
+openssl = "0.10.72"
+idna = "1.0.3"
+rsa = "0.9.8"
