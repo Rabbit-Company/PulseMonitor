@@ -33,5 +33,5 @@ sqlx = { version = "0.8", features = [
 
 # Dependencies to fix security vulnerabilities
 openssl = "0.10.72"
-idna = "1.0.3"
+url = "2.5.4"
 rsa = "0.9.8"
