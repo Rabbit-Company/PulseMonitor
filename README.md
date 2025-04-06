@@ -3,6 +3,7 @@
 This Rust program serves as a simple monitoring tool for MySQL, PostgreSQL and Redis databases. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
 
 Features:
+
 - Monitor MySQL, PostgreSQL and Redis databases
 - Sends regular pulses to specified uptime monitors
 - Easily configurable via `config.toml` file
@@ -12,6 +13,28 @@ Features:
 Before running Pulse Monitor, make sure to create `config.toml` file and configure all monitors.
 
 ```toml
+#
+# START HTTP
+#
+[[monitors]]
+enabled = true
+name = "rabbit-company.com"
+execute_every = 10
+
+[monitors.heartbeat]
+method = "GET"
+url = ""
+#bearer_token = "" (optional)
+#username = "" (optional)
+#password = "" (optional)
+
+[monitors.http]
+method = "GET"
+url = "https://rabbit-company.com"
+#bearer_token = "" (optional)
+#username = "" (optional)
+#password = "" (optional)
+
 #
 # START MySQL
 #
@@ -23,6 +46,9 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
+#bearer_token = "" (optional)
+#username = "" (optional)
+#password = "" (optional)
 
 [monitors.mysql]
 url = "mysql://username:password@localhost:3306/db_name"
@@ -38,6 +64,9 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
+#bearer_token = "" (optional)
+#username = "" (optional)
+#password = "" (optional)
 
 [monitors.postgresql]
 url = "postgresql://username:password@localhost:5432/db_name"
@@ -53,12 +82,16 @@ execute_every = 10
 [monitors.heartbeat]
 method = "GET"
 url = ""
+#bearer_token = "" (optional)
+#username = "" (optional)
+#password = "" (optional)
 
 [monitors.redis]
 url = "redis://username:password@localhost:6379/db_name"
 ```
 
 ## Installation
+
 ```bash
 # Download the binary
 wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v1.0.0/pulsemonitor
@@ -76,7 +109,7 @@ Running Pulse Monitor in the background is a simple task, just make sure that it
 
 ```service
 [Unit]
-Description=Pulse Monitor 
+Description=Pulse Monitor
 After=network.target
 
 [Service]
