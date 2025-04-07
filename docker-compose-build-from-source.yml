@@ -1,0 +1,7 @@
+services:
+  pulse:
+    build: .
+    container_name: pulsemonitor
+    volumes:
+      - ./config.toml:/config.toml
+    restart: unless-stopped

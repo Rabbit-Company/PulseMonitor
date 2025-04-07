@@ -1,0 +1,8 @@
+target
+.git
+.github
+.gitignore
+.editorconfig
+Dockerfile
+README.md
+LICENSE

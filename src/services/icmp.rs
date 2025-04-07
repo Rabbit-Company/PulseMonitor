@@ -2,7 +2,7 @@ use std::error::Error;
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::time::Duration;
-use ping::ping;
+use ping::dgramsock::ping;
 
 use crate::utils::Monitor;
 
