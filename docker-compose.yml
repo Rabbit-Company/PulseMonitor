@@ -1,0 +1,7 @@
+services:
+  pulse:
+    container_name: pulsemonitor
+    image: "rabbitcompany/pulsemonitor:latest"
+    volumes:
+      - ./config.toml:/config.toml
+    restart: unless-stopped
