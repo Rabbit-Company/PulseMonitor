@@ -1,5 +1,5 @@
 services:
-  pulse:
+  pulsemonitor:
     container_name: pulsemonitor
     image: "rabbitcompany/pulsemonitor:latest"
     volumes:

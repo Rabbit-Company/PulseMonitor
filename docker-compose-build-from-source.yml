@@ -1,5 +1,5 @@
 services:
-  pulse:
+  pulsemonitor:
     build: .
     container_name: pulsemonitor
     volumes:
