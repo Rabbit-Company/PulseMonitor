@@ -1,4 +1,5 @@
 use std::fs;
+use std::time::Instant;
 use tracing::error;
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
@@ -75,6 +76,8 @@ async fn main() {
 
 		tokio::spawn(async move {
 			loop {
+				let start_time = Instant::now();
+
 				let result = if cloned_monitor.http.is_some() {
 					is_http_online(&cloned_monitor).await
 				} else if cloned_monitor.tcp.is_some() {
@@ -93,6 +96,8 @@ async fn main() {
 					Ok(())
 				};
 
+				let latency_ms = start_time.elapsed().as_secs_f64() * 1000.0;
+
 				if let Err(err) = result {
 					if cloned_monitor.debug.unwrap_or(false) {
 						error!(
@@ -102,7 +107,7 @@ async fn main() {
 						);
 					}
 				} else {
-					let _ = send_heartbeat(&cloned_monitor).await;
+					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
 				}
 
 				sleep(Duration::from_secs(interval)).await;

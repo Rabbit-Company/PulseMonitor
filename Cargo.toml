@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.0.0"
+version = "3.1.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2021"
@@ -33,8 +33,3 @@ sqlx = { version = "0.8", features = [
 	"mysql",
 	"postgres",
 ] }
-
-# Dependencies to fix security vulnerabilities
-openssl = "0.10.72"
-url = "2.5.4"
-rsa = "0.9.8"
