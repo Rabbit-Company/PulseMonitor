@@ -226,6 +226,19 @@ headers = [
 url = "redis://username:password@localhost:6379/db_name"
 ```
 
+## Docker Installation
+
+Do not forget to create `config.toml` file in the same directory as your `docker-compose.yml` file.
+```yml
+services:
+  pulsemonitor:
+    container_name: pulsemonitor
+    image: "rabbitcompany/pulsemonitor:3"
+    volumes:
+      - ./config.toml:/config.toml
+    restart: unless-stopped
+```
+
 ## Installation
 
 ```bash
