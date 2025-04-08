@@ -3,7 +3,7 @@ use std::time::Instant;
 use tracing::error;
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
-use services::{http::is_http_online, icmp::is_icmp_online, tcp::is_tcp_online, udp::is_udp_online};
+use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online};
 use utils::{Config, VERSION};
 use crate::services::mysql::is_mysql_online;
 use crate::services::postgresql::is_postgresql_online;
@@ -19,6 +19,8 @@ mod services {
 	pub mod tcp;
 	pub mod udp;
 	pub mod icmp;
+	pub mod smtp;
+	pub mod imap;
 	pub mod mysql;
 	pub mod postgresql;
 	pub mod redis;
@@ -58,6 +60,10 @@ async fn main() {
 			"UDP"
 		} else if monitor.icmp.is_some() {
 			"ICMP"
+		} else if monitor.smtp.is_some() {
+			"SMTP"
+		} else if monitor.imap.is_some() {
+			"IMAP"
 		} else if monitor.mysql.is_some() {
 			"MySQL"
 		} else if monitor.postgresql.is_some() {
@@ -86,6 +92,10 @@ async fn main() {
 					is_udp_online(&cloned_monitor).await
 				} else if cloned_monitor.icmp.is_some() {
 					is_icmp_online(&cloned_monitor).await
+				} else if cloned_monitor.smtp.is_some() {
+					is_smtp_online(&cloned_monitor).await
+				} else if cloned_monitor.imap.is_some() {
+					is_imap_online(&cloned_monitor).await
 				} else if cloned_monitor.mysql.is_some() {
 					is_mysql_online(&cloned_monitor).await
 				} else if cloned_monitor.postgresql.is_some() {

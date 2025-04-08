@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 
-pub const VERSION: &str = "v3.2.0";
+pub const VERSION: &str = "v3.3.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +22,8 @@ pub struct Monitor {
 	pub tcp: Option<TcpConfig>,
 	pub udp: Option<UdpConfig>,
 	pub icmp: Option<IcmpConfig>,
+	pub smtp: Option<SmtpConfig>,
+	pub imap: Option<ImapConfig>,
 	pub mysql: Option<MysqlConfig>,
 	pub postgresql: Option<PostgreSqlConfig>,
 	pub redis: Option<RedisConfig>
@@ -38,13 +40,15 @@ pub struct HeartbeatConfig {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MysqlConfig {
-	pub url: String
+	pub url: String,
+	pub timeout: Option<u64>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PostgreSqlConfig {
-	pub url: String
+	pub url: String,
+	pub timeout: Option<u64>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -84,4 +88,19 @@ pub struct UdpConfig {
 pub struct IcmpConfig {
 	pub host: String,
 	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImapConfig {
+	pub server: String,
+	pub port: u16,
+	pub username: String,
+	pub password: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SmtpConfig {
+	pub url: String,
 }

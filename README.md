@@ -1,10 +1,10 @@
 # PulseMonitor
 
-This Rust program serves as a simple monitoring tool for HTTP, ICMP, TCP, UDP, MySQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
+This Rust program serves as a simple monitoring tool for HTTP, ICMP, TCP, UDP, SMTP, IMAP, MySQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
 
 Features:
 
-- Monitor HTTP, ICMP, TCP, UDP, MySQL, PostgreSQL and Redis
+- Monitor HTTP, ICMP, TCP, UDP, SMTP, IMAP, MySQL, PostgreSQL and Redis
 - Sends regular pulses to specified uptime monitors
 - Easily configurable via `config.toml` file
 
@@ -27,7 +27,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -36,7 +36,7 @@ method = "GET"
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -54,7 +54,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -77,7 +77,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -102,13 +102,63 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.icmp]
 host = "8.8.8.8"
 timeout = 2
+
+#
+# START SMTP
+#
+[[monitors]]
+enabled = true
+name = "SMTP"
+interval = 10
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "X-Latency" = "{latency}" },
+]
+
+[monitors.smtp]
+# SMTP over TLS
+url = "smtps://user:pass@hostname:port"
+# SMTP with STARTTLS
+#url = "smtp://user:pass@hostname:port?tls=required"
+# Unencrypted SMTP
+#url = "smtp://user:pass@hostname:port"
+
+#
+# START IMAP
+#
+[[monitors]]
+enabled = true
+name = "IMAP"
+interval = 10
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "X-Latency" = "{latency}" },
+]
+
+[monitors.imap]
+server = ""
+port = 993
+username = ""
+password = ""
 
 #
 # START MySQL
@@ -124,12 +174,13 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.mysql]
 url = "mysql://username:password@localhost:3306/db_name"
+timeout = 3
 
 #
 # START PostgreSQL
@@ -145,12 +196,13 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.postgresql]
 url = "postgresql://username:password@localhost:5432/db_name"
+timeout = 3
 
 #
 # START Redis
@@ -166,7 +218,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.2.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.3.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -178,7 +230,7 @@ url = "redis://username:password@localhost:6379/db_name"
 
 ```bash
 # Download the binary
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.2.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.3.0/pulsemonitor
 # Set file permissions
 sudo chmod 755 pulsemonitor
 # Place the binary to `/usr/local/bin`
@@ -221,7 +273,7 @@ systemctl enable --now pulsemonitor
 systemctl stop pulsemonitor
 
 # Download Pulse Monitor
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.2.0/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.3.0/pulsemonitor
 sudo chmod 755 pulsemonitor
 sudo mv pulsemonitor /usr/local/bin
 
