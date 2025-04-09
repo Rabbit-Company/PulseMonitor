@@ -6,3 +6,5 @@ target
 Dockerfile
 README.md
 LICENSE
+docker-compose-test.yml
+config-test.toml

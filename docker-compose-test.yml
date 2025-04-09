@@ -1,0 +1,51 @@
+services:
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_USER: rabbitcompany
+      MYSQL_PASSWORD: Passw0rd123
+      MYSQL_RANDOM_ROOT_PASSWORD: yes
+      MYSQL_DATABASE: pulsemonitor
+    networks:
+      - monitoring_network
+
+  postgresql:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: rabbitcompany
+      POSTGRES_PASSWORD: Passw0rd123
+      POSTGRES_DB: pulsemonitor
+    networks:
+      - monitoring_network
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: always
+    shm_size: 128mb
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: Passw0rd123
+    networks:
+      - monitoring_network
+
+  redis:
+    image: redis
+    restart: always
+    networks:
+      - monitoring_network
+
+  pulsemonitor:
+    build: .
+    container_name: pulsemonitor
+    restart: always
+    volumes:
+      - ./config-test.toml:/config.toml
+    networks:
+      - monitoring_network
+
+networks:
+  monitoring_network:
+    driver: bridge

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 
-pub const VERSION: &str = "v3.4.0";
+pub const VERSION: &str = "v3.5.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,6 +25,7 @@ pub struct Monitor {
 	pub smtp: Option<SmtpConfig>,
 	pub imap: Option<ImapConfig>,
 	pub mysql: Option<MysqlConfig>,
+	pub mssql: Option<MssqlConfig>,
 	pub postgresql: Option<PostgreSqlConfig>,
 	pub redis: Option<RedisConfig>
 }
@@ -46,15 +47,24 @@ pub struct MysqlConfig {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PostgreSqlConfig {
+pub struct MssqlConfig {
 	pub url: String,
 	pub timeout: Option<u64>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PostgreSqlConfig {
+	pub url: String,
+	pub timeout: Option<u64>,
+	pub use_tls: Option<bool>
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RedisConfig {
-	pub url: String
+	pub url: String,
+	pub timeout: Option<u64>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

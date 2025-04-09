@@ -1,6 +1,6 @@
 use std::error::Error;
-use sqlx::postgres::PgPoolOptions;
-use tokio::time::Duration;
+use tokio::time::{Duration, timeout};
+use tokio_postgres::{Client, NoTls};
 
 use crate::utils::Monitor;
 
@@ -10,11 +10,43 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 		.as_ref()
 		.ok_or("Monitor does not contain PostgreSQL configuration")?;
 
-	let pool = PgPoolOptions::new()
-		.acquire_timeout(Duration::from_secs(postgresql.timeout.unwrap_or(3)))
-		.connect(&postgresql.url).await?;
+	let timeout_duration = Duration::from_secs(postgresql.timeout.unwrap_or(3));
+	let use_tls = postgresql.use_tls.unwrap_or(false);
 
-	let _ = sqlx::query("SELECT 1").execute(&pool).await?;
+	if use_tls {
+		let connector = native_tls::TlsConnector::new()?;
+		let connector = postgres_native_tls::MakeTlsConnector::new(connector);
 
-	Ok(())
+		let (client, connection): (Client, _) = match timeout(timeout_duration, tokio_postgres::connect(&postgresql.url, connector)).await {
+			Ok(Ok((client, connection))) => (client, connection),
+			Ok(Err(e)) => return Err(Box::new(e)),
+			Err(_) => return Err("PostgreSQL TLS connection timed out".into()),
+		};
+
+		tokio::spawn(connection);
+
+		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
+
+		match query_result {
+			Ok(Ok(_)) => Ok(()),
+			Ok(Err(e)) => Err(Box::new(e)),
+			Err(_) => Err("PostgreSQL query timed out".into()),
+		}
+	} else {
+		let (client, connection): (Client, _) = match timeout(timeout_duration, tokio_postgres::connect(&postgresql.url, NoTls)).await {
+			Ok(Ok((client, connection))) => (client, connection),
+			Ok(Err(e)) => return Err(Box::new(e)),
+			Err(_) => return Err("PostgreSQL connection timed out".into()),
+		};
+
+		tokio::spawn(connection);
+
+		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
+
+		match query_result {
+			Ok(Ok(_)) => Ok(()),
+			Ok(Err(e)) => Err(Box::new(e)),
+			Err(_) => Err("PostgreSQL query timed out".into()),
+		}
+	}
 }

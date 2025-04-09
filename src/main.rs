@@ -1,9 +1,10 @@
 use std::fs;
 use std::time::Instant;
-use tracing::error;
+use tracing::{error, info, Level};
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
-use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online};
+use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online};
+use tracing_subscriber::EnvFilter;
 use utils::{Config, VERSION};
 use crate::services::mysql::is_mysql_online;
 use crate::services::postgresql::is_postgresql_online;
@@ -22,6 +23,7 @@ mod services {
 	pub mod smtp;
 	pub mod imap;
 	pub mod mysql;
+	pub mod mssql;
 	pub mod postgresql;
 	pub mod redis;
 }
@@ -36,7 +38,12 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
-	tracing_subscriber::fmt::init();
+	tracing_subscriber::fmt()
+		.with_env_filter(EnvFilter::from_default_env()
+			.add_directive(Level::INFO.into())
+			.add_directive("tiberius=off".parse().unwrap())
+			.add_directive("tokio_util=off".parse().unwrap())
+		).init();
 
 	let args: Args = Args::parse();
 	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
@@ -66,6 +73,8 @@ async fn main() {
 			"IMAP"
 		} else if monitor.mysql.is_some() {
 			"MySQL"
+		} else if monitor.mssql.is_some() {
+			"MSSQL"
 		} else if monitor.postgresql.is_some() {
 			"PostgreSQL"
 		} else if monitor.redis.is_some() {
@@ -84,6 +93,8 @@ async fn main() {
 			let mut interval_timer = tokio::time::interval(Duration::from_secs(interval));
 			// First tick happens immediately, skip it to avoid double execution
 			interval_timer.tick().await;
+
+			let mut last_heartbeat_time = Instant::now();
 
 			loop {
 				interval_timer.tick().await; // Wait for the next scheduled interval
@@ -104,6 +115,8 @@ async fn main() {
 					is_imap_online(&cloned_monitor).await
 				} else if cloned_monitor.mysql.is_some() {
 					is_mysql_online(&cloned_monitor).await
+				} else if cloned_monitor.mssql.is_some() {
+					is_mssql_online(&cloned_monitor).await
 				} else if cloned_monitor.postgresql.is_some() {
 					is_postgresql_online(&cloned_monitor).await
 				} else if cloned_monitor.redis.is_some() {
@@ -112,7 +125,7 @@ async fn main() {
 					Ok(())
 				};
 
-				let latency_ms = start_time.elapsed().as_secs_f64() * 1000.0;
+				let latency_ms = ((start_time.elapsed().as_secs_f64() * 1000.0) * 1000.0).round() / 1000.0;
 
 				if let Err(err) = result {
 					if cloned_monitor.debug.unwrap_or(false) {
@@ -123,7 +136,17 @@ async fn main() {
 						);
 					}
 				} else {
-					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
+					if cloned_monitor.debug.unwrap_or(false) {
+						info!(
+							"Monitor '{}' succeed ({}ms)",
+							cloned_monitor.name,
+							latency_ms
+						);
+					}
+					if last_heartbeat_time.elapsed() >= Duration::from_secs(interval - 1) {
+						let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
+						last_heartbeat_time = Instant::now();
+					}
 				}
 			}
 		});
@@ -143,7 +166,7 @@ async fn main() {
 		.set_header(vec!["Service", "Interval (s)", "Name"])
 		.add_rows(rows);
 
-	println!("\n{color_white}{}{color_reset}\n", table);
+	println!("{color_white}{}{color_reset}\n", table);
 
 	loop {
 		sleep(Duration::from_secs(3600)).await;
