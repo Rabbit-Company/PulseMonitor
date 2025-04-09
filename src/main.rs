@@ -81,7 +81,13 @@ async fn main() {
 		]);
 
 		tokio::spawn(async move {
+			let mut interval_timer = tokio::time::interval(Duration::from_secs(interval));
+			// First tick happens immediately, skip it to avoid double execution
+			interval_timer.tick().await;
+
 			loop {
+				interval_timer.tick().await; // Wait for the next scheduled interval
+
 				let start_time = Instant::now();
 
 				let result = if cloned_monitor.http.is_some() {
@@ -119,8 +125,6 @@ async fn main() {
 				} else {
 					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
 				}
-
-				sleep(Duration::from_secs(interval)).await;
 			}
 		});
 
