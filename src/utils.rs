@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 
-pub const VERSION: &str = "v3.5.0";
+pub const VERSION: &str = "v3.6.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,6 +19,7 @@ pub struct Monitor {
 	pub heartbeat: HeartbeatConfig,
 	pub debug: Option<bool>,
 	pub http: Option<HttpConfig>,
+	pub ws: Option<WsConfig>,
 	pub tcp: Option<TcpConfig>,
 	pub udp: Option<UdpConfig>,
 	pub icmp: Option<IcmpConfig>,
@@ -73,6 +74,13 @@ pub struct HttpConfig {
 	pub method: String,
 	pub url: String,
 	pub headers: Option<Vec<HashMap<String, String>>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WsConfig {
+	pub url: String,
+	pub timeout: Option<u64>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

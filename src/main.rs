@@ -3,7 +3,7 @@ use std::time::Instant;
 use tracing::{error, info, Level};
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
-use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online};
+use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online};
 use tracing_subscriber::EnvFilter;
 use utils::{Config, VERSION};
 use crate::services::mysql::is_mysql_online;
@@ -17,6 +17,7 @@ mod utils;
 mod heartbeat;
 mod services {
 	pub mod http;
+	pub mod ws;
 	pub mod tcp;
 	pub mod udp;
 	pub mod icmp;
@@ -61,6 +62,8 @@ async fn main() {
 
 		let service_type = if monitor.http.is_some() {
 			"HTTP"
+		} else if monitor.ws.is_some() {
+			"WS"
 		} else if monitor.tcp.is_some() {
 			"TCP"
 		} else if monitor.udp.is_some() {
@@ -103,6 +106,8 @@ async fn main() {
 
 				let result = if cloned_monitor.http.is_some() {
 					is_http_online(&cloned_monitor).await
+				} else if cloned_monitor.ws.is_some() {
+					is_ws_online(&cloned_monitor).await
 				} else if cloned_monitor.tcp.is_some() {
 					is_tcp_online(&cloned_monitor).await
 				} else if cloned_monitor.udp.is_some() {

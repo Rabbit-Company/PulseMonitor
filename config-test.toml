@@ -12,7 +12,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -21,15 +21,37 @@ method = "GET"
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
+
+#
+# START WS
+#
+[[monitors]]
+enabled = true
+name = "WS"
+interval = 10
+debug = true
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
+headers = [
+	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "X-Latency" = "{latency}" },
+]
+
+[monitors.ws]
+url = "ws://172.28.0.6:6380/ws/default_token"
+timeout = 3
 
 #
 # START TCP
 #
 [[monitors]]
-enabled = false
+enabled = true
 name = "TCP"
 interval = 10
 debug = true
@@ -39,13 +61,13 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.tcp]
-host = "127.0.0.1"
-port = 53
+host = "172.28.0.6"
+port = 6381
 timeout = 3
 
 #
@@ -62,7 +84,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -77,7 +99,7 @@ expect_response = true
 # START ICMP
 #
 [[monitors]]
-enabled = false
+enabled = true
 name = "ICMP"
 interval = 10
 debug = true
@@ -87,12 +109,12 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.icmp]
-host = "127.0.0.1"
+host = "172.28.0.6"
 timeout = 2
 
 #
@@ -109,7 +131,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -135,7 +157,7 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -159,12 +181,12 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.mysql]
-url = "mysql://rabbitcompany:Passw0rd123@mysql:3306/pulsemonitor"
+url = "mysql://rabbitcompany:Passw0rd123@172.28.0.2:3306/pulsemonitor"
 timeout = 3
 
 #
@@ -181,12 +203,12 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.mssql]
-url = "jdbc:sqlserver://mssql;databaseName=master;encrypt=false;user=sa;password=Passw0rd123;TrustServerCertificate=true;"
+url = "jdbc:sqlserver://172.28.0.4;databaseName=master;encrypt=false;user=sa;password=Passw0rd123;TrustServerCertificate=true;"
 timeout = 3
 
 #
@@ -203,12 +225,12 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.postgresql]
-url = "postgresql://rabbitcompany:Passw0rd123@postgresql:5432/pulsemonitor"
+url = "postgresql://rabbitcompany:Passw0rd123@172.28.0.3:5432/pulsemonitor"
 timeout = 3
 use_tls = false
 
@@ -226,9 +248,9 @@ method = "GET"
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.5.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.6.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.redis]
-url = "redis://redis/"
+url = "redis://172.28.0.5/"

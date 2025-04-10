@@ -8,7 +8,8 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: yes
       MYSQL_DATABASE: pulsemonitor
     networks:
-      - monitoring_network
+      monitoring_network:
+        ipv4_address: 172.28.0.2
 
   postgresql:
     image: postgres
@@ -19,7 +20,8 @@ services:
       POSTGRES_PASSWORD: Passw0rd123
       POSTGRES_DB: pulsemonitor
     networks:
-      - monitoring_network
+      monitoring_network:
+        ipv4_address: 172.28.0.3
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -29,13 +31,23 @@ services:
       ACCEPT_EULA: Y
       MSSQL_SA_PASSWORD: Passw0rd123
     networks:
-      - monitoring_network
+      monitoring_network:
+        ipv4_address: 172.28.0.4
 
   redis:
     image: redis
     restart: always
     networks:
-      - monitoring_network
+      monitoring_network:
+        ipv4_address: 172.28.0.5
+
+  rabbit-kv:
+    image: "rabbitcompany/rabbit-kv:latest"
+    restart: always
+    command: rabbit-kv --token default_token
+    networks:
+      monitoring_network:
+        ipv4_address: 172.28.0.6
 
   pulsemonitor:
     build: .
@@ -44,8 +56,12 @@ services:
     volumes:
       - ./config-test.toml:/config.toml
     networks:
-      - monitoring_network
+      monitoring_network:
+        ipv4_address: 172.28.0.7
 
 networks:
   monitoring_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
