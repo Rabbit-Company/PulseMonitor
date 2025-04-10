@@ -1,22 +1,19 @@
 # Stage 1: Build
-FROM rust:1.86 AS builder
+FROM rust:1.86-alpine AS builder
+
+RUN apk add --no-cache musl-dev openssl-dev pkgconfig build-base
 
 WORKDIR /app
 COPY . .
 RUN cargo build --release
 
 # Stage 2: Runtime
-FROM debian:12-slim
+FROM alpine
 
 LABEL maintainer="Rabbit Company (info@rabbit-company.com)"
 
-RUN apt-get update && apt-get install -y \
-	libssl3 \
-	libssl-dev \
-	curl \
-	&& rm -rf /var/lib/apt/lists/*
+RUN adduser -D -u 1000 pulse
 
-RUN useradd -m pulse
 COPY --from=builder /app/target/release/pulsemonitor /usr/local/bin/pulsemonitor
 RUN chown pulse:pulse /usr/local/bin/pulsemonitor
 

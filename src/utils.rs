@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize,Deserialize};
 
-pub const VERSION: &str = "v3.6.0";
+pub const VERSION: &str = "v3.7.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

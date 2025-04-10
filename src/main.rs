@@ -140,7 +140,7 @@ async fn main() {
 							err
 						);
 					}
-				} else {
+				} else if last_heartbeat_time.elapsed() >= Duration::from_secs(interval - 1) {
 					if cloned_monitor.debug.unwrap_or(false) {
 						info!(
 							"Monitor '{}' succeed ({}ms)",
@@ -148,10 +148,8 @@ async fn main() {
 							latency_ms
 						);
 					}
-					if last_heartbeat_time.elapsed() >= Duration::from_secs(interval - 1) {
-						let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
-						last_heartbeat_time = Instant::now();
-					}
+					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
+					last_heartbeat_time = Instant::now();
 				}
 			}
 		});

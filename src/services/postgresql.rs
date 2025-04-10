@@ -14,8 +14,10 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 	let use_tls = postgresql.use_tls.unwrap_or(false);
 
 	if use_tls {
-		let connector = native_tls::TlsConnector::new()?;
-		let connector = postgres_native_tls::MakeTlsConnector::new(connector);
+		let config = rustls::ClientConfig::builder()
+			.with_root_certificates(rustls::RootCertStore::empty())
+			.with_no_client_auth();
+		let connector = tokio_postgres_rustls::MakeRustlsConnect::new(config);
 
 		let (client, connection): (Client, _) = match timeout(timeout_duration, tokio_postgres::connect(&postgresql.url, connector)).await {
 			Ok(Ok((client, connection))) => (client, connection),
