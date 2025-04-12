@@ -289,11 +289,11 @@ services:
 
 ```bash
 # Download the binary
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.7.0/pulsemonitor-x86_64-gnu
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/latest/download/pulsemonitor-$(uname -m)-gnu
 # Set file permissions
-sudo chmod 755 pulsemonitor-x86_64-gnu
+sudo chmod 755 pulsemonitor-$(uname -m)-gnu
 # Place the binary to `/usr/local/bin`
-sudo mv pulsemonitor-x86_64-gnu /usr/local/bin/pulsemonitor
+sudo mv pulsemonitor-$(uname -m)-gnu /usr/local/bin/pulsemonitor
 # Start the monitor and don't forget to change the path to your config.toml file
 pulsemonitor --config ./config.toml
 ```
@@ -332,9 +332,9 @@ systemctl enable --now pulsemonitor
 systemctl stop pulsemonitor
 
 # Download Pulse Monitor
-wget https://github.com/Rabbit-Company/PulseMonitor/releases/download/v3.7.0/pulsemonitor-x86_64-gnu
-sudo chmod 755 pulsemonitor-x86_64-gnu
-sudo mv pulsemonitor-x86_64-gnu /usr/local/bin/pulsemonitor
+wget https://github.com/Rabbit-Company/PulseMonitor/releases/latest/download/pulsemonitor-$(uname -m)-gnu
+sudo chmod 755 pulsemonitor-$(uname -m)-gnu
+sudo mv pulsemonitor-$(uname -m)-gnu /usr/local/bin/pulsemonitor
 
 # Start service
 systemctl start pulsemonitor
