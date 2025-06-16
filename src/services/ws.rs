@@ -1,9 +1,9 @@
+use futures_util::{SinkExt, StreamExt};
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{error::Error, time::Duration};
 use tokio::time::timeout;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
-use futures_util::{StreamExt, SinkExt};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::utils::Monitor;
 
@@ -21,7 +21,9 @@ pub async fn is_ws_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send 
 
 	let ping_payload = format!("{:?}", SystemTime::now().duration_since(UNIX_EPOCH)?).into_bytes();
 
-	write.send(Message::Ping(ping_payload.clone().into())).await?;
+	write
+		.send(Message::Ping(ping_payload.clone().into()))
+		.await?;
 
 	let response = timeout(timeout_duration, read.next()).await;
 

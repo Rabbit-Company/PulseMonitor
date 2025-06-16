@@ -1,5 +1,5 @@
-use std::error::Error;
 use reqwest::Client;
+use std::error::Error;
 
 use crate::utils::Monitor;
 
@@ -15,7 +15,7 @@ pub async fn is_http_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Sen
 		"GET" => client.get(&http.url),
 		"POST" => client.post(&http.url),
 		"HEAD" => client.head(&http.url),
-		_ => return Err(format!("Unsupported HTTP method: {}", http.method).into())
+		_ => return Err(format!("Unsupported HTTP method: {}", http.method).into()),
 	};
 
 	if let Some(headers) = &http.headers {

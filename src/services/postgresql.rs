@@ -1,5 +1,5 @@
 use std::error::Error;
-use tokio::time::{Duration, timeout};
+use tokio::time::{timeout, Duration};
 use tokio_postgres::{Client, NoTls};
 
 use crate::utils::Monitor;
@@ -19,7 +19,12 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 			.with_no_client_auth();
 		let connector = tokio_postgres_rustls::MakeRustlsConnect::new(config);
 
-		let (client, connection): (Client, _) = match timeout(timeout_duration, tokio_postgres::connect(&postgresql.url, connector)).await {
+		let (client, connection): (Client, _) = match timeout(
+			timeout_duration,
+			tokio_postgres::connect(&postgresql.url, connector),
+		)
+		.await
+		{
 			Ok(Ok((client, connection))) => (client, connection),
 			Ok(Err(e)) => return Err(Box::new(e)),
 			Err(_) => return Err("PostgreSQL TLS connection timed out".into()),
@@ -35,7 +40,12 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 			Err(_) => Err("PostgreSQL query timed out".into()),
 		}
 	} else {
-		let (client, connection): (Client, _) = match timeout(timeout_duration, tokio_postgres::connect(&postgresql.url, NoTls)).await {
+		let (client, connection): (Client, _) = match timeout(
+			timeout_duration,
+			tokio_postgres::connect(&postgresql.url, NoTls),
+		)
+		.await
+		{
 			Ok(Ok((client, connection))) => (client, connection),
 			Ok(Err(e)) => return Err(Box::new(e)),
 			Err(_) => return Err("PostgreSQL connection timed out".into()),

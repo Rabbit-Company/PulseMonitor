@@ -3,7 +3,7 @@ use reqwest::Client;
 use std::error::Error;
 use std::sync::Arc;
 
-pub async fn send_heartbeat(monitor: &Monitor, latency_ms: f64) -> Result<(), Box<dyn Error>>{
+pub async fn send_heartbeat(monitor: &Monitor, latency_ms: f64) -> Result<(), Box<dyn Error>> {
 	let monitor = Arc::new(monitor.clone());
 
 	let client = Client::new();
@@ -17,7 +17,7 @@ pub async fn send_heartbeat(monitor: &Monitor, latency_ms: f64) -> Result<(), Bo
 		"GET" => client.get(&url),
 		"POST" => client.post(&url),
 		"HEAD" => client.head(&url),
-		_ => return Err(format!("Unsupported HTTP method: {}", monitor.heartbeat.method).into())
+		_ => return Err(format!("Unsupported HTTP method: {}", monitor.heartbeat.method).into()),
 	};
 
 	if let Some(headers) = &monitor.heartbeat.headers {

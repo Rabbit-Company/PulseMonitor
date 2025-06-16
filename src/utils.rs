@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.7.0";
+pub const VERSION: &str = "v3.8.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
-  pub monitors: Vec<Monitor>
+	pub monitors: Vec<Monitor>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -28,7 +28,7 @@ pub struct Monitor {
 	pub mysql: Option<MysqlConfig>,
 	pub mssql: Option<MssqlConfig>,
 	pub postgresql: Option<PostgreSqlConfig>,
-	pub redis: Option<RedisConfig>
+	pub redis: Option<RedisConfig>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -43,14 +43,14 @@ pub struct HeartbeatConfig {
 #[serde(rename_all = "camelCase")]
 pub struct MysqlConfig {
 	pub url: String,
-	pub timeout: Option<u64>
+	pub timeout: Option<u64>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MssqlConfig {
 	pub url: String,
-	pub timeout: Option<u64>
+	pub timeout: Option<u64>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -58,7 +58,7 @@ pub struct MssqlConfig {
 pub struct PostgreSqlConfig {
 	pub url: String,
 	pub timeout: Option<u64>,
-	pub use_tls: Option<bool>
+	pub use_tls: Option<bool>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -80,7 +80,7 @@ pub struct HttpConfig {
 #[serde(rename_all = "camelCase")]
 pub struct WsConfig {
 	pub url: String,
-	pub timeout: Option<u64>
+	pub timeout: Option<u64>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -1,6 +1,6 @@
+use mysql_async::{prelude::Queryable, Opts, OptsBuilder, Pool};
 use std::error::Error;
 use tokio::time::Duration;
-use mysql_async::{prelude::Queryable, Opts, OptsBuilder, Pool};
 
 use crate::utils::Monitor;
 

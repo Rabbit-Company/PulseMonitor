@@ -1,32 +1,35 @@
-use std::fs;
-use std::time::Instant;
-use tracing::{error, info, Level};
-use clap::Parser;
-use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
-use services::{http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online, smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online};
-use tracing_subscriber::EnvFilter;
-use utils::{Config, VERSION};
+use crate::heartbeat::send_heartbeat;
 use crate::services::mysql::is_mysql_online;
 use crate::services::postgresql::is_postgresql_online;
 use crate::services::redis::is_redis_online;
-use crate::heartbeat::send_heartbeat;
+use clap::Parser;
+use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
+use inline_colorization::{color_blue, color_reset, color_white};
+use services::{
+	http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online,
+	smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online,
+};
+use std::fs;
+use std::time::Instant;
 use tokio::time::{sleep, Duration};
-use inline_colorization::{color_blue,color_white,color_reset};
+use tracing::{error, info, Level};
+use tracing_subscriber::EnvFilter;
+use utils::{Config, VERSION};
 
-mod utils;
 mod heartbeat;
+mod utils;
 mod services {
 	pub mod http;
-	pub mod ws;
-	pub mod tcp;
-	pub mod udp;
 	pub mod icmp;
-	pub mod smtp;
 	pub mod imap;
-	pub mod mysql;
 	pub mod mssql;
+	pub mod mysql;
 	pub mod postgresql;
 	pub mod redis;
+	pub mod smtp;
+	pub mod tcp;
+	pub mod udp;
+	pub mod ws;
 }
 
 #[derive(Parser, Debug)]
@@ -34,17 +37,19 @@ mod services {
 struct Args {
 	/// Path to config.toml file
 	#[arg(short, long, default_value_t = String::from("config.toml"))]
-	config: String
+	config: String,
 }
 
 #[tokio::main]
 async fn main() {
 	tracing_subscriber::fmt()
-		.with_env_filter(EnvFilter::from_default_env()
-			.add_directive(Level::INFO.into())
-			.add_directive("tiberius=off".parse().unwrap())
-			.add_directive("tokio_util=off".parse().unwrap())
-		).init();
+		.with_env_filter(
+			EnvFilter::from_default_env()
+				.add_directive(Level::INFO.into())
+				.add_directive("tiberius=off".parse().unwrap())
+				.add_directive("tokio_util=off".parse().unwrap()),
+		)
+		.init();
 
 	let args: Args = Args::parse();
 	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
@@ -55,7 +60,9 @@ async fn main() {
 	let mut rows: Vec<Vec<Cell>> = Vec::new();
 
 	for monitor in config.monitors {
-		if !monitor.enabled { continue; }
+		if !monitor.enabled {
+			continue;
+		}
 
 		let interval = monitor.interval;
 		let cloned_monitor = monitor.clone();
@@ -134,18 +141,13 @@ async fn main() {
 
 				if let Err(err) = result {
 					if cloned_monitor.debug.unwrap_or(false) {
-						error!(
-							"Monitor '{}' failed: {}",
-							cloned_monitor.name,
-							err
-						);
+						error!("Monitor '{}' failed: {}", cloned_monitor.name, err);
 					}
 				} else if last_heartbeat_time.elapsed() >= Duration::from_secs(interval - 1) {
 					if cloned_monitor.debug.unwrap_or(false) {
 						info!(
 							"Monitor '{}' succeed ({}ms)",
-							cloned_monitor.name,
-							latency_ms
+							cloned_monitor.name, latency_ms
 						);
 					}
 					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
@@ -174,5 +176,4 @@ async fn main() {
 	loop {
 		sleep(Duration::from_secs(3600)).await;
 	}
-
 }
