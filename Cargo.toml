@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.8.0"
+version = "3.8.1"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2021"
@@ -81,4 +81,4 @@ tiberius = { version = "0.12", default-features = false, features = [
 	"rustls",
 ] }
 
-rustls = { version = "0.23", features = ["ring"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }

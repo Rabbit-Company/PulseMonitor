@@ -51,6 +51,10 @@ async fn main() {
 		)
 		.init();
 
+	rustls::crypto::ring::default_provider()
+  	.install_default()
+  	.expect("Failed to install rustls crypto provider");
+
 	let args: Args = Args::parse();
 	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
 	let config: Config = toml::from_str(&toml_string).expect("Failed to parse TOML from config file");
