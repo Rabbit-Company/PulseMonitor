@@ -5,7 +5,9 @@ use tiberius::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 
-pub async fn is_mssql_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_mssql_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let mssql = monitor
 		.mssql
 		.as_ref()
@@ -27,5 +29,5 @@ pub async fn is_mssql_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Se
 
 	client.query("SELECT 1", &[]).await?;
 
-	Ok(())
+	Ok(None)
 }

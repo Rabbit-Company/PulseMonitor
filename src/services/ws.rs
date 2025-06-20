@@ -7,7 +7,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 
 use crate::utils::Monitor;
 
-pub async fn is_ws_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_ws_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let ws = monitor
 		.ws
 		.as_ref()
@@ -30,7 +30,7 @@ pub async fn is_ws_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send 
 	match response {
 		Ok(Some(Ok(Message::Pong(payload)))) if payload == ping_payload => {
 			write.close().await?;
-			Ok(())
+			Ok(None)
 		}
 		Ok(Some(Ok(msg))) => Err(format!("Unexpected response: {:?}", msg).into()),
 		Ok(Some(Err(e))) => Err(format!("Error reading pong: {}", e).into()),

@@ -2,7 +2,9 @@ use std::error::Error;
 
 use crate::utils::Monitor;
 
-pub async fn is_icmp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_icmp_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let icmp = monitor
 		.icmp
 		.as_ref()
@@ -11,17 +13,36 @@ pub async fn is_icmp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Sen
 	let timeout = icmp.timeout.unwrap_or(3);
 
 	let output = tokio::process::Command::new("ping")
-		.arg("-c").arg("1") // Send 1 packet
-		.arg("-W").arg(timeout.to_string()) // Timeout in seconds
-		.arg("-q") // Quiet mode
+		.arg("-c")
+		.arg("1")
+		.arg("-W")
+		.arg(timeout.to_string())
+		.arg("-q")
 		.arg(&icmp.host)
 		.output()
 		.await?;
 
 	if output.status.success() {
-    Ok(())
-  } else {
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    Err(format!("Ping to {} failed: {}", icmp.host, stderr).into())
-  }
+		let stdout = String::from_utf8_lossy(&output.stdout);
+
+		if let Some(rtt_line) = stdout
+			.lines()
+			.last()
+		{
+			if let Some(values_part) = rtt_line.split('=').nth(1) {
+				let parts: Vec<&str> = values_part.split('/').collect();
+
+				if parts.len() >= 2 {
+					if let Ok(avg) = parts[1].parse::<f64>() {
+						return Ok(Some(avg));
+					}
+				}
+			}
+		}
+
+		Ok(None)
+	} else {
+		let stderr = String::from_utf8_lossy(&output.stderr);
+		Err(format!("Ping to {} failed: {}", icmp.host, stderr).into())
+	}
 }

@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.8.2"
+version = "3.8.3"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2021"

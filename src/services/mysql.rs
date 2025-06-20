@@ -4,7 +4,9 @@ use tokio::time::Duration;
 
 use crate::utils::Monitor;
 
-pub async fn is_mysql_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_mysql_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let mysql = monitor
 		.mysql
 		.as_ref()
@@ -30,7 +32,7 @@ pub async fn is_mysql_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Se
 	let ping_result = tokio::time::timeout(timeout, conn.query_drop("SELECT 1")).await;
 
 	match ping_result {
-		Ok(Ok(_)) => Ok(()),
+		Ok(Ok(_)) => Ok(None),
 		Ok(Err(e)) => Err(Box::new(e)),
 		Err(_) => Err("MySQL query timed out".into()),
 	}

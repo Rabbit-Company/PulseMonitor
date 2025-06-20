@@ -4,7 +4,7 @@ use tokio::time::{timeout, Duration};
 
 use crate::utils::Monitor;
 
-pub async fn is_udp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_udp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let udp = monitor
 		.udp
 		.as_ref()
@@ -21,11 +21,11 @@ pub async fn is_udp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send
 	if udp.expect_response.unwrap_or(false) {
 		let mut buf = [0u8; 1024];
 		match timeout(timeout_duration, socket.recv_from(&mut buf)).await {
-			Ok(Ok((_n, _src))) => Ok(()),
+			Ok(Ok((_n, _src))) => Ok(None),
 			Ok(Err(e)) => Err(format!("Failed to receive UDP response: {}", e).into()),
 			Err(_) => Err("UDP response timed out".into()),
 		}
 	} else {
-		Ok(())
+		Ok(None)
 	}
 }

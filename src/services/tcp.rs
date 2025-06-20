@@ -4,7 +4,7 @@ use tokio::time::{timeout, Duration};
 
 use crate::utils::Monitor;
 
-pub async fn is_tcp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_tcp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let tcp = monitor
 		.tcp
 		.as_ref()
@@ -14,7 +14,7 @@ pub async fn is_tcp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send
 	let timeout_duration = Duration::from_secs(tcp.timeout.unwrap_or(5));
 
 	match timeout(timeout_duration, TcpStream::connect(&addr)).await {
-		Ok(Ok(_stream)) => Ok(()),
+		Ok(Ok(_stream)) => Ok(None),
 		Ok(Err(e)) => Err(format!("Failed to connect to TCP server: {}", e).into()),
 		Err(_) => Err("TCP connection attempt timed out".into()),
 	}

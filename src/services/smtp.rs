@@ -4,7 +4,9 @@ use lettre::{SmtpTransport, Transport};
 
 use crate::utils::Monitor;
 
-pub async fn is_smtp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_smtp_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let smtp = monitor
 		.smtp
 		.as_ref()
@@ -14,5 +16,5 @@ pub async fn is_smtp_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Sen
 	sender.test_connection()?;
 	sender.shutdown();
 
-	Ok(())
+	Ok(None)
 }

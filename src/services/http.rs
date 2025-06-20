@@ -1,9 +1,11 @@
 use reqwest::Client;
-use std::error::Error;
+use std::{error::Error, time::Instant};
 
 use crate::utils::Monitor;
 
-pub async fn is_http_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_http_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let http = monitor
 		.http
 		.as_ref()
@@ -26,10 +28,12 @@ pub async fn is_http_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Sen
 		}
 	}
 
+	let request_start = Instant::now();
 	let response = request.send().await?;
+	let request_latency = request_start.elapsed().as_secs_f64() * 1000.0;
 
 	if response.status().is_success() {
-		Ok(())
+		Ok(Some(request_latency))
 	} else {
 		Err(format!("Request failed with status: {}", response.status()).into())
 	}

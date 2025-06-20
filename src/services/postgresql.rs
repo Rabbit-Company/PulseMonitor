@@ -4,7 +4,9 @@ use tokio_postgres::{Client, NoTls};
 
 use crate::utils::Monitor;
 
-pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_postgresql_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let postgresql = monitor
 		.postgresql
 		.as_ref()
@@ -35,7 +37,7 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
 
 		match query_result {
-			Ok(Ok(_)) => Ok(()),
+			Ok(Ok(_)) => Ok(None),
 			Ok(Err(e)) => Err(Box::new(e)),
 			Err(_) => Err("PostgreSQL query timed out".into()),
 		}
@@ -56,7 +58,7 @@ pub async fn is_postgresql_online(monitor: &Monitor) -> Result<(), Box<dyn Error
 		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
 
 		match query_result {
-			Ok(Ok(_)) => Ok(()),
+			Ok(Ok(_)) => Ok(None),
 			Ok(Err(e)) => Err(Box::new(e)),
 			Err(_) => Err("PostgreSQL query timed out".into()),
 		}

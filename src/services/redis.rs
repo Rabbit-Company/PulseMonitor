@@ -3,7 +3,9 @@ use tokio::time::Duration;
 
 use crate::utils::Monitor;
 
-pub async fn is_redis_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn is_redis_online(
+	monitor: &Monitor,
+) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
 	let redis = monitor
 		.redis
 		.as_ref()
@@ -21,7 +23,7 @@ pub async fn is_redis_online(monitor: &Monitor) -> Result<(), Box<dyn Error + Se
 	.await;
 
 	match result {
-		Ok(Ok(_)) => Ok(()),
+		Ok(Ok(_)) => Ok(None),
 		Ok(Err(e)) => Err(e),
 		Err(_) => Err(Box::new(std::io::Error::new(
 			std::io::ErrorKind::TimedOut,

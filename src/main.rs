@@ -40,6 +40,10 @@ struct Args {
 	config: String,
 }
 
+fn round_to_3_decimals(dec: f64) -> f64 {
+	(dec * 1000.0).round() / 1000.0
+}
+
 #[tokio::main]
 async fn main() {
 	tracing_subscriber::fmt()
@@ -52,8 +56,8 @@ async fn main() {
 		.init();
 
 	rustls::crypto::ring::default_provider()
-  	.install_default()
-  	.expect("Failed to install rustls crypto provider");
+		.install_default()
+		.expect("Failed to install rustls crypto provider");
 
 	let args: Args = Args::parse();
 	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
@@ -138,10 +142,13 @@ async fn main() {
 				} else if cloned_monitor.redis.is_some() {
 					is_redis_online(&cloned_monitor).await
 				} else {
-					Ok(())
+					Ok(None)
 				};
 
-				let latency_ms = ((start_time.elapsed().as_secs_f64() * 1000.0) * 1000.0).round() / 1000.0;
+				let latency_ms = match &result {
+					Ok(Some(latency)) => round_to_3_decimals(*latency),
+					_ => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
+				};
 
 				if let Err(err) = result {
 					if cloned_monitor.debug.unwrap_or(false) {
