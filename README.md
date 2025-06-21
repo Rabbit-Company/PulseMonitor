@@ -201,7 +201,7 @@ headers = [
 ]
 
 [monitors.mysql]
-url = "mysql://username:password@localhost:3306/db_name"
+url = "mysql://username:password@localhost:3306/db_name?require_ssl=true"
 timeout = 3
 
 #
