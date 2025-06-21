@@ -1,5 +1,8 @@
 use reqwest::Client;
-use std::{error::Error, time::Instant};
+use std::{
+	error::Error,
+	time::{Duration, Instant},
+};
 
 use crate::utils::Monitor;
 
@@ -11,7 +14,9 @@ pub async fn is_http_online(
 		.as_ref()
 		.ok_or("Monitor does not contain HTTP configuration")?;
 
-	let client = Client::new();
+	let client = Client::builder()
+		.timeout(Duration::from_secs(http.timeout.unwrap_or(10)))
+		.build()?;
 
 	let mut request = match http.method.to_uppercase().as_str() {
 		"GET" => client.get(&http.url),

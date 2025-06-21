@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.8.3";
+pub const VERSION: &str = "v3.8.4";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,6 +36,7 @@ pub struct Monitor {
 pub struct HeartbeatConfig {
 	pub method: String,
 	pub url: String,
+	pub timeout: Option<u64>,
 	pub headers: Option<Vec<HashMap<String, String>>>,
 }
 
@@ -73,6 +74,7 @@ pub struct RedisConfig {
 pub struct HttpConfig {
 	pub method: String,
 	pub url: String,
+	pub timeout: Option<u64>,
 	pub headers: Option<Vec<HashMap<String, String>>>,
 }
 

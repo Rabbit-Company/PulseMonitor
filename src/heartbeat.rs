@@ -2,11 +2,14 @@ use crate::utils::Monitor;
 use reqwest::Client;
 use std::error::Error;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub async fn send_heartbeat(monitor: &Monitor, latency_ms: f64) -> Result<(), Box<dyn Error>> {
 	let monitor = Arc::new(monitor.clone());
 
-	let client = Client::new();
+	let client = Client::builder()
+		.timeout(Duration::from_secs(monitor.heartbeat.timeout.unwrap_or(10)))
+		.build()?;
 
 	let url = monitor
 		.heartbeat

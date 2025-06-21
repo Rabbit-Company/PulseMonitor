@@ -25,10 +25,7 @@ pub async fn is_icmp_online(
 	if output.status.success() {
 		let stdout = String::from_utf8_lossy(&output.stdout);
 
-		if let Some(rtt_line) = stdout
-			.lines()
-			.last()
-		{
+		if let Some(rtt_line) = stdout.lines().last() {
 			if let Some(values_part) = rtt_line.split('=').nth(1) {
 				let parts: Vec<&str> = values_part.split('/').collect();
 

@@ -1487,7 +1487,7 @@ dependencies = [
 
 [[package]]
 name = "pulsemonitor"
-version = "3.8.3"
+version = "3.8.4"
 dependencies = [
  "clap",
  "comfy-table",
