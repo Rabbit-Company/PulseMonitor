@@ -1,13 +1,13 @@
 [package]
 name = "pulsemonitor"
-version = "3.8.4"
+version = "3.8.5"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2021"
 repository = "https://github.com/Rabbit-Company/PulseMonitor"
 license = "GPL-3.0"
 readme = "README.md"
-rust-version = "1.87.0"
+rust-version = "1.88.0"
 categories = ["command-line-utilities"]
 keywords = ["cli", "process-monitoring"]
 publish = ["pulsemonitor"]

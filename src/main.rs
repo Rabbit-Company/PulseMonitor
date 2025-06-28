@@ -112,8 +112,6 @@ async fn main() {
 			// First tick happens immediately, skip it to avoid double execution
 			interval_timer.tick().await;
 
-			let mut last_heartbeat_time = Instant::now();
-
 			loop {
 				interval_timer.tick().await; // Wait for the next scheduled interval
 
@@ -150,19 +148,25 @@ async fn main() {
 					_ => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
 				};
 
-				if let Err(err) = result {
-					if cloned_monitor.debug.unwrap_or(false) {
-						error!("Monitor '{}' failed: {}", cloned_monitor.name, err);
+				match &result {
+					Ok(_) => {
+						if cloned_monitor.debug.unwrap_or(false) {
+							info!(
+								"Monitor '{}' succeed ({}ms)",
+								cloned_monitor.name, latency_ms
+							);
+						}
+						// Send heartbeat for every successful check
+						if let Err(e) = send_heartbeat(&cloned_monitor, latency_ms).await {
+							error!("Failed to send heartbeat for '{}': {}", cloned_monitor.name, e);
+						}
 					}
-				} else if last_heartbeat_time.elapsed() >= Duration::from_secs(interval - 1) {
-					if cloned_monitor.debug.unwrap_or(false) {
-						info!(
-							"Monitor '{}' succeed ({}ms)",
-							cloned_monitor.name, latency_ms
-						);
+					Err(err) => {
+						if cloned_monitor.debug.unwrap_or(false) {
+							error!("Monitor '{}' failed: {}", cloned_monitor.name, err);
+						}
+						// TODO: Add option to send a 'down' heartbeat
 					}
-					let _ = send_heartbeat(&cloned_monitor, latency_ms).await;
-					last_heartbeat_time = Instant::now();
 				}
 			}
 		});
