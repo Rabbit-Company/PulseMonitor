@@ -2,6 +2,7 @@ use crate::heartbeat::send_heartbeat;
 use crate::services::mysql::is_mysql_online;
 use crate::services::postgresql::is_postgresql_online;
 use crate::services::redis::is_redis_online;
+use chrono::Utc;
 use clap::Parser;
 use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
 use inline_colorization::{color_blue, color_reset, color_white};
@@ -115,6 +116,7 @@ async fn main() {
 			loop {
 				interval_timer.tick().await; // Wait for the next scheduled interval
 
+				let start_check_time = Utc::now();
 				let start_time = Instant::now();
 
 				let result = if cloned_monitor.http.is_some() {
@@ -143,6 +145,8 @@ async fn main() {
 					Ok(None)
 				};
 
+				let end_check_time = Utc::now();
+
 				let latency_ms = match &result {
 					Ok(Some(latency)) => round_to_3_decimals(*latency),
 					_ => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
@@ -157,7 +161,7 @@ async fn main() {
 							);
 						}
 						// Send heartbeat for every successful check
-						if let Err(e) = send_heartbeat(&cloned_monitor, latency_ms).await {
+						if let Err(e) = send_heartbeat(&cloned_monitor, start_check_time, end_check_time, latency_ms).await {
 							error!("Failed to send heartbeat for '{}': {}", cloned_monitor.name, e);
 						}
 					}

@@ -28,7 +28,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -38,7 +38,7 @@ timeout = 10
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -57,7 +57,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -80,7 +80,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -104,7 +104,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -130,7 +130,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -153,7 +153,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -180,7 +180,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -205,7 +205,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -228,7 +228,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -251,7 +251,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -275,12 +275,41 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.8.5; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.9.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
 [monitors.redis]
 url = "redis://username:password@localhost:6379/db_name"
+```
+
+## Template Placeholders
+
+When PulseMonitor sends a heartbeat, it replaces template placeholders inside the `url` and `headers` fields of the `heartbeat` section. These placeholders allow uptime services to receive timing and performance data dynamically.
+
+### Available placeholders:
+
+| Placeholder       | Description                                                          | Format Example             |
+| ----------------- | -------------------------------------------------------------------- | -------------------------- |
+| `{latency}`       | Round-trip latency of the check in milliseconds                      | `123.456`                  |
+| `{startTimeISO}`  | UTC timestamp of when the check started (ISO 8601 with milliseconds) | `2025-07-21T07:06:39.568Z` |
+| `{endTimeISO}`    | UTC timestamp of when the check ended (ISO 8601 with milliseconds)   | `2025-07-21T07:06:40.000Z` |
+| `{startTimeUnix}` | Milliseconds since UNIX epoch for when the check started             | `1753081599568`            |
+| `{endTimeUnix}`   | Milliseconds since UNIX epoch for when the check ended               | `1753081600000`            |
+
+You can use these placeholders in both the `url` and `headers` sections of the heartbeat configuration. This gives flexibility to integrate with third-party uptime monitoring, alerting, and logging services.
+
+### Example usage in heartbeat:
+
+```toml
+[monitors.heartbeat]
+method = "POST"
+url = "https://example.com/ping?latency={latency}&start={startTimeISO}&end={endTimeISO}"
+headers = [
+  { "X-Latency" = "{latency}" },
+  { "X-Start" = "{startTimeUnix}" },
+  { "X-End" = "{endTimeUnix}" }
+]
 ```
 
 ## Docker Installation
