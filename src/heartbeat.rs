@@ -4,7 +4,12 @@ use reqwest::Client;
 use std::error::Error;
 use std::time::Duration;
 
-pub async fn send_heartbeat(monitor: &Monitor, start_check_time: DateTime<Utc>, end_check_time: DateTime<Utc>, latency_ms: f64) -> Result<(), Box<dyn Error>> {
+pub async fn send_heartbeat(
+	monitor: &Monitor,
+	start_check_time: DateTime<Utc>,
+	end_check_time: DateTime<Utc>,
+	latency_ms: f64,
+) -> Result<(), Box<dyn Error>> {
 	let client = Client::builder()
 		.timeout(Duration::from_secs(monitor.heartbeat.timeout.unwrap_or(10)))
 		.build()?;

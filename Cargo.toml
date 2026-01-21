@@ -1,13 +1,13 @@
 [package]
 name = "pulsemonitor"
-version = "3.9.0"
+version = "3.10.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/Rabbit-Company/PulseMonitor"
 license = "GPL-3.0"
 readme = "README.md"
-rust-version = "1.88.0"
+rust-version = "1.92.0"
 categories = ["command-line-utilities"]
 keywords = ["cli", "process-monitoring"]
 publish = ["pulsemonitor"]
@@ -20,25 +20,25 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 # CLI and UI
 clap = { version = "4.5", features = ["derive"] }
-comfy-table = "7.1"
+comfy-table = "7.2"
 inline_colorization = "0.1"
 
 # Async runtime and utilities
-tokio = { version = "1.45", features = ["full"] }
+tokio = { version = "1.49", features = ["full"] }
 futures-util = "0.3"
 tokio-util = { version = "0.7", features = ["compat"] }
 
 # Config and Serialization
-toml = "0.8"
+toml = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 
 # HTTP
-reqwest = { version = "0.12", default-features = false, features = [
-	"rustls-tls",
+reqwest = { version = "0.13", default-features = false, features = [
+	"rustls",
 ] }
 
 # WebSocket
-tokio-tungstenite = { version = "0.27", default-features = false, features = [
+tokio-tungstenite = { version = "0.28", default-features = false, features = [
 	"connect",
 	"rustls-tls-webpki-roots",
 ] }
@@ -57,7 +57,7 @@ imap = { version = "3.0.0-alpha.15", default-features = false, features = [
 ] }
 
 # Redis
-redis = { version = "0.32", default-features = false, features = [
+redis = { version = "1.0", default-features = false, features = [
 	"tokio-rustls-comp",
 	"tls-rustls-webpki-roots",
 ] }

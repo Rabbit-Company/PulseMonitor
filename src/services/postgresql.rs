@@ -1,5 +1,5 @@
 use std::error::Error;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 use tokio_postgres::{Client, NoTls};
 
 use crate::utils::Monitor;

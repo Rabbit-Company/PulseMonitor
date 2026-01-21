@@ -1,4 +1,4 @@
-use mysql_async::{prelude::Queryable, Opts, OptsBuilder, Pool};
+use mysql_async::{Opts, OptsBuilder, Pool, prelude::Queryable};
 use std::error::Error;
 use tokio::time::Duration;
 

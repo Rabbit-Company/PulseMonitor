@@ -4,7 +4,7 @@ use crate::services::postgresql::is_postgresql_online;
 use crate::services::redis::is_redis_online;
 use chrono::Utc;
 use clap::Parser;
-use comfy_table::{presets::UTF8_FULL, Cell, Color, Table};
+use comfy_table::{Cell, Color, Table, presets::UTF8_FULL};
 use inline_colorization::{color_blue, color_reset, color_white};
 use services::{
 	http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online,
@@ -12,8 +12,8 @@ use services::{
 };
 use std::fs;
 use std::time::Instant;
-use tokio::time::{sleep, Duration};
-use tracing::{error, info, Level};
+use tokio::time::{Duration, sleep};
+use tracing::{Level, error, info};
 use tracing_subscriber::EnvFilter;
 use utils::{Config, VERSION};
 
@@ -161,8 +161,18 @@ async fn main() {
 							);
 						}
 						// Send heartbeat for every successful check
-						if let Err(e) = send_heartbeat(&cloned_monitor, start_check_time, end_check_time, latency_ms).await {
-							error!("Failed to send heartbeat for '{}': {}", cloned_monitor.name, e);
+						if let Err(e) = send_heartbeat(
+							&cloned_monitor,
+							start_check_time,
+							end_check_time,
+							latency_ms,
+						)
+						.await
+						{
+							error!(
+								"Failed to send heartbeat for '{}': {}",
+								cloned_monitor.name, e
+							);
 						}
 					}
 					Err(err) => {

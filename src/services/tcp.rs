@@ -1,6 +1,6 @@
 use std::error::Error;
 use tokio::net::TcpStream;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 use crate::utils::Monitor;
 

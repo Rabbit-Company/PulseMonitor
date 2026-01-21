@@ -6,28 +6,20 @@ use crate::utils::Monitor;
 pub async fn is_redis_online(
 	monitor: &Monitor,
 ) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
-	let redis = monitor
+	let redis_config = monitor
 		.redis
 		.as_ref()
-		.ok_or("Monitor does not contain Redis configuration")?;
+		.ok_or("Redis configuration missing")?;
 
-	let timeout_duration: Duration = Duration::from_secs(redis.timeout.unwrap_or(3));
+	let timeout = Duration::from_secs(redis_config.timeout.unwrap_or(3));
+	let client = redis::Client::open(redis_config.url.as_str())?;
 
-	let client = redis::Client::open(redis.url.clone())?;
-
-	let result = tokio::time::timeout(timeout_duration, async {
-		let mut con = client.get_multiplexed_tokio_connection().await?;
-		let _: () = redis::cmd("PING").query_async(&mut con).await?;
-		Ok(())
+	tokio::time::timeout(timeout, async {
+		let mut conn = client.get_multiplexed_async_connection().await?;
+		let _: String = redis::cmd("PING").query_async(&mut conn).await?;
+		Ok(None)
 	})
-	.await;
-
-	match result {
-		Ok(Ok(_)) => Ok(None),
-		Ok(Err(e)) => Err(e),
-		Err(_) => Err(Box::new(std::io::Error::new(
-			std::io::ErrorKind::TimedOut,
-			"Redis connection timed out",
-		))),
-	}
+	.await
+	.map_err(|_| "Redis connection timeout".into())
+	.and_then(|result| result)
 }
