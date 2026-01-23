@@ -1,24 +1,16 @@
-use crate::heartbeat::send_heartbeat;
-use crate::services::mysql::is_mysql_online;
-use crate::services::postgresql::is_postgresql_online;
-use crate::services::redis::is_redis_online;
-use chrono::Utc;
 use clap::Parser;
-use comfy_table::{Cell, Color, Table, presets::UTF8_FULL};
-use inline_colorization::{color_blue, color_reset, color_white};
-use services::{
-	http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online,
-	smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online,
-};
+use inline_colorization::{color_blue, color_reset, color_yellow};
 use std::fs;
-use std::time::Instant;
+use std::sync::Arc;
 use tokio::time::{Duration, sleep};
-use tracing::{Level, error, info};
+use tracing::{Level, error, info, warn};
 use tracing_subscriber::EnvFilter;
 use utils::{Config, VERSION};
 
 mod heartbeat;
+mod monitor_runner;
 mod utils;
+mod ws_client;
 mod services {
 	pub mod http;
 	pub mod icmp;
@@ -33,16 +25,96 @@ mod services {
 	pub mod ws;
 }
 
+use monitor_runner::MonitorRunner;
+use ws_client::WsClient;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-	/// Path to config.toml file
+	/// Path to config.toml file (optional if using PULSE_SERVER_URL)
 	#[arg(short, long, default_value_t = String::from("config.toml"))]
 	config: String,
 }
 
-fn round_to_3_decimals(dec: f64) -> f64 {
-	(dec * 1000.0).round() / 1000.0
+/// Configuration mode
+enum ConfigMode {
+	/// Use local config.toml file
+	File(Config),
+	/// Use WebSocket connection to UptimeMonitor-Server
+	WebSocket { server_url: String, token: String },
+}
+
+fn load_env_config() -> Option<(String, String)> {
+	// Try to load from .env file
+	let _ = dotenvy::dotenv();
+
+	let server_url = std::env::var("PULSE_SERVER_URL").ok();
+	let token = std::env::var("PULSE_TOKEN").ok();
+
+	match (server_url, token) {
+		(Some(url), Some(tok)) if !url.is_empty() && !tok.is_empty() => Some((url, tok)),
+		_ => None,
+	}
+}
+
+fn determine_config_mode(args: &Args) -> Result<ConfigMode, Box<dyn std::error::Error>> {
+	// First, check for environment variables
+	if let Some((server_url, token)) = load_env_config() {
+		info!("Using WebSocket mode with server: {}", server_url);
+		return Ok(ConfigMode::WebSocket { server_url, token });
+	}
+
+	// Fall back to config file
+	let config_path = &args.config;
+
+	if fs::metadata(config_path).is_ok() {
+		let toml_string = fs::read_to_string(config_path)?;
+		let config: Config = toml::from_str(&toml_string)?;
+		info!("Using config file: {}", config_path);
+		return Ok(ConfigMode::File(config));
+	}
+
+	Err(
+		format!(
+			"No configuration found. Either set PULSE_SERVER_URL and PULSE_TOKEN environment variables, \
+		or provide a config.toml file at '{}'",
+			config_path
+		)
+		.into(),
+	)
+}
+
+async fn run_file_mode(config: Config) {
+	let runner = MonitorRunner::new();
+	let _handles = runner.start_monitors(&config).await;
+
+	loop {
+		sleep(Duration::from_secs(3600)).await;
+	}
+}
+
+async fn run_websocket_mode(server_url: String, token: String) {
+	let client = Arc::new(WsClient::new(&server_url, &token));
+	let mut config_rx = client.start().await;
+
+	let runner = MonitorRunner::with_server_url(server_url);
+	let mut _current_handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
+
+	info!("Waiting for configuration from server...");
+
+	// Wait for configuration updates
+	while let Some(config) = config_rx.recv().await {
+		info!(
+			"Applying new configuration with {} monitors",
+			config.monitors.len()
+		);
+
+		// Update monitors with new config
+		_current_handles = runner.update_monitors(&config).await;
+	}
+
+	// This should only happen if the channel is closed
+	error!("Configuration channel closed unexpectedly");
 }
 
 #[tokio::main]
@@ -61,148 +133,31 @@ async fn main() {
 		.expect("Failed to install rustls crypto provider");
 
 	let args: Args = Args::parse();
-	let toml_string = fs::read_to_string(args.config).expect("Failed to read config file");
-	let config: Config = toml::from_str(&toml_string).expect("Failed to parse TOML from config file");
 
 	println!("{color_blue}PulseMonitor {}{color_reset}\n", VERSION);
 
-	let mut rows: Vec<Vec<Cell>> = Vec::new();
-
-	for monitor in config.monitors {
-		if !monitor.enabled {
-			continue;
+	match determine_config_mode(&args) {
+		Ok(ConfigMode::File(config)) => {
+			println!("{color_yellow}Mode: Local config file{color_reset}\n");
+			run_file_mode(config).await;
 		}
-
-		let interval = monitor.interval;
-		let cloned_monitor = monitor.clone();
-
-		let service_type = if monitor.http.is_some() {
-			"HTTP"
-		} else if monitor.ws.is_some() {
-			"WS"
-		} else if monitor.tcp.is_some() {
-			"TCP"
-		} else if monitor.udp.is_some() {
-			"UDP"
-		} else if monitor.icmp.is_some() {
-			"ICMP"
-		} else if monitor.smtp.is_some() {
-			"SMTP"
-		} else if monitor.imap.is_some() {
-			"IMAP"
-		} else if monitor.mysql.is_some() {
-			"MySQL"
-		} else if monitor.mssql.is_some() {
-			"MSSQL"
-		} else if monitor.postgresql.is_some() {
-			"PostgreSQL"
-		} else if monitor.redis.is_some() {
-			"Redis"
-		} else {
-			"None"
-		};
-
-		rows.push(vec![
-			Cell::new(service_type).fg(Color::Blue),
-			Cell::new(format!("{}s", monitor.interval)).fg(Color::DarkGrey),
-			Cell::new(monitor.name).fg(Color::Green),
-		]);
-
-		tokio::spawn(async move {
-			let mut interval_timer = tokio::time::interval(Duration::from_secs(interval));
-			// First tick happens immediately, skip it to avoid double execution
-			interval_timer.tick().await;
-
-			loop {
-				interval_timer.tick().await; // Wait for the next scheduled interval
-
-				let start_check_time = Utc::now();
-				let start_time = Instant::now();
-
-				let result = if cloned_monitor.http.is_some() {
-					is_http_online(&cloned_monitor).await
-				} else if cloned_monitor.ws.is_some() {
-					is_ws_online(&cloned_monitor).await
-				} else if cloned_monitor.tcp.is_some() {
-					is_tcp_online(&cloned_monitor).await
-				} else if cloned_monitor.udp.is_some() {
-					is_udp_online(&cloned_monitor).await
-				} else if cloned_monitor.icmp.is_some() {
-					is_icmp_online(&cloned_monitor).await
-				} else if cloned_monitor.smtp.is_some() {
-					is_smtp_online(&cloned_monitor).await
-				} else if cloned_monitor.imap.is_some() {
-					is_imap_online(&cloned_monitor).await
-				} else if cloned_monitor.mysql.is_some() {
-					is_mysql_online(&cloned_monitor).await
-				} else if cloned_monitor.mssql.is_some() {
-					is_mssql_online(&cloned_monitor).await
-				} else if cloned_monitor.postgresql.is_some() {
-					is_postgresql_online(&cloned_monitor).await
-				} else if cloned_monitor.redis.is_some() {
-					is_redis_online(&cloned_monitor).await
-				} else {
-					Ok(None)
-				};
-
-				let end_check_time = Utc::now();
-
-				let latency_ms = match &result {
-					Ok(Some(latency)) => round_to_3_decimals(*latency),
-					_ => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
-				};
-
-				match &result {
-					Ok(_) => {
-						if cloned_monitor.debug.unwrap_or(false) {
-							info!(
-								"Monitor '{}' succeed ({}ms)",
-								cloned_monitor.name, latency_ms
-							);
-						}
-						// Send heartbeat for every successful check
-						if let Err(e) = send_heartbeat(
-							&cloned_monitor,
-							start_check_time,
-							end_check_time,
-							latency_ms,
-						)
-						.await
-						{
-							error!(
-								"Failed to send heartbeat for '{}': {}",
-								cloned_monitor.name, e
-							);
-						}
-					}
-					Err(err) => {
-						if cloned_monitor.debug.unwrap_or(false) {
-							error!("Monitor '{}' failed: {}", cloned_monitor.name, err);
-						}
-						// TODO: Add option to send a 'down' heartbeat
-					}
-				}
-			}
-		});
-
-		sleep(Duration::from_secs(1)).await;
-	}
-
-	let mut table = Table::new();
-	table
-		.load_preset(UTF8_FULL)
-		.set_style(comfy_table::TableComponent::HeaderLines, '─')
-		.set_style(comfy_table::TableComponent::MiddleHeaderIntersections, '┼')
-		.set_style(comfy_table::TableComponent::RightHeaderIntersection, '┤')
-		.set_style(comfy_table::TableComponent::LeftHeaderIntersection, '├')
-		.set_style(comfy_table::TableComponent::HorizontalLines, '─')
-		.set_style(comfy_table::TableComponent::VerticalLines, '│')
-		.set_header(vec!["Service", "Interval (s)", "Name"])
-		.add_rows(rows);
-
-	println!("{color_white}{}{color_reset}\n", table);
-
-	loop {
-		sleep(Duration::from_secs(3600)).await;
+		Ok(ConfigMode::WebSocket { server_url, token }) => {
+			println!(
+				"{color_yellow}Mode: WebSocket ({}){color_reset}\n",
+				server_url
+			);
+			run_websocket_mode(server_url, token).await;
+		}
+		Err(e) => {
+			error!("Configuration error: {}", e);
+			warn!(
+				"To use WebSocket mode, set these environment variables:\n\
+				  PULSE_SERVER_URL=http://localhost:3000\n\
+				  PULSE_TOKEN=your_token_here\n\
+				\n\
+				Or create a config.toml file."
+			);
+			std::process::exit(1);
+		}
 	}
 }

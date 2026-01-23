@@ -1,16 +1,49 @@
 # PulseMonitor
 
-This Rust program serves as a simple monitoring tool for HTTP, WS, ICMP, TCP, UDP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL and Redis. It retrieves configurations from a `config.toml` file and performs monitoring tasks accordingly.
+This Rust program serves as a simple monitoring tool for HTTP, WS, ICMP, TCP, UDP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL and Redis. It can retrieve configurations from a `config.toml` file or connect to an [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server) via WebSocket for dynamic configuration.
 
 Features:
 
 - Monitor HTTP, WS, ICMP, TCP, UDP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL and Redis
 - Sends regular pulses to specified uptime monitors
 - Easily configurable via `config.toml` file
+- Dynamic configuration via WebSocket connection to [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server)
+- Automatic reconnection with 3-second delay on connection failure
+- Real-time configuration updates without restart
 
-## Configuration
+## Configuration Modes
 
-Before running Pulse Monitor, make sure to create `config.toml` file and configure all monitors.
+PulseMonitor supports two configuration modes:
+
+### 1. WebSocket Mode (Recommended for centralized management)
+
+Set environment variables to connect to an [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server):
+
+```bash
+# Set via environment variables
+export PULSE_SERVER_URL=http://localhost:3000
+export PULSE_TOKEN=your_token_here
+
+# Or use a .env file
+cp .env.example .env
+# Edit .env with your settings
+```
+
+When using WebSocket mode:
+
+- PulseMonitor connects to configured [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server)
+- Authenticates using the provided token
+- Receives monitor configuration from the server
+- Automatically updates when configuration changes on the server
+- Reconnects automatically if connection is lost (3-second delay)
+
+### 2. File Mode (Traditional)
+
+Create a `config.toml` file for standalone operation. This mode is used when `PULSE_SERVER_URL` is not set.
+
+## File Configuration
+
+Before running Pulse Monitor with file mode, make sure to create `config.toml` file and configure all monitors.
 
 ```toml
 #
@@ -28,7 +61,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -38,7 +71,7 @@ timeout = 10
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -57,7 +90,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -80,7 +113,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -104,7 +137,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -130,7 +163,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -153,7 +186,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -180,7 +213,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -205,7 +238,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -228,7 +261,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -251,7 +284,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -275,7 +308,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.10.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.11.0; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -314,6 +347,21 @@ headers = [
 
 ## Docker Installation
 
+### Using WebSocket Mode
+
+```yml
+services:
+  pulsemonitor:
+    container_name: pulsemonitor
+    image: "rabbitcompany/pulsemonitor:3"
+    environment:
+      - PULSE_SERVER_URL=http://localhost:3000
+      - PULSE_TOKEN=your_token_here
+    restart: unless-stopped
+```
+
+### Using File Mode
+
 Do not forget to create `config.toml` file in the same directory as your `docker-compose.yml` file.
 
 ```yml
@@ -342,6 +390,31 @@ pulsemonitor --config ./config.toml
 ## Daemonizing (using systemd)
 
 Running Pulse Monitor in the background is a simple task, just make sure that it runs without errors before doing this. Place the contents below in a file called `pulsemonitor.service` in the `/etc/systemd/system/` directory.
+
+### For WebSocket Mode:
+
+```service
+[Unit]
+Description=Pulse Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment="PULSE_SERVER_URL=http://localhost:3000"
+Environment="PULSE_TOKEN=your_token_here"
+ExecStart=pulsemonitor
+TimeoutStartSec=0
+TimeoutStopSec=2
+RemainAfterExit=yes
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### For File Mode:
 
 ```service
 [Unit]
@@ -380,3 +453,10 @@ sudo mv pulsemonitor-$(uname -m)-gnu /usr/local/bin/pulsemonitor
 # Start service
 systemctl start pulsemonitor
 ```
+
+## Environment Variables
+
+| Variable           | Description                                                                                                               | Required           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `PULSE_SERVER_URL` | URL of the [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server) (e.g., `http://localhost:3000`) | For WebSocket mode |
+| `PULSE_TOKEN`      | Authentication token for the [UptimeMonitor-Server](https://github.com/Rabbit-Company/UptimeMonitor-Server)               | For WebSocket mode |

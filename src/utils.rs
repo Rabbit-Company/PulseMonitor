@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.10.0";
+pub const VERSION: &str = "v3.11.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +16,10 @@ pub struct Monitor {
 	pub enabled: bool,
 	pub interval: u64,
 	pub name: String,
-	pub heartbeat: HeartbeatConfig,
+	/// Token for this monitor (used in WebSocket mode to build heartbeat URL)
+	pub token: Option<String>,
+	/// Heartbeat configuration (used in file mode, optional in WebSocket mode)
+	pub heartbeat: Option<HeartbeatConfig>,
 	pub debug: Option<bool>,
 	pub http: Option<HttpConfig>,
 	pub ws: Option<WsConfig>,
@@ -123,4 +126,50 @@ pub struct ImapConfig {
 #[serde(rename_all = "camelCase")]
 pub struct SmtpConfig {
 	pub url: String,
+}
+
+// WebSocket Protocol Messages
+
+/// Data wrapper for monitor list
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonitorData {
+	pub monitors: Vec<Monitor>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "action", rename_all = "kebab-case")]
+pub enum WsMessage {
+	Connected {
+		message: String,
+		timestamp: String,
+	},
+	Subscribe {
+		token: String,
+	},
+	Subscribed {
+		#[serde(rename = "pulseMonitorId")]
+		pulse_monitor_id: String,
+		#[serde(rename = "pulseMonitorName")]
+		pulse_monitor_name: String,
+		data: MonitorData,
+		timestamp: String,
+	},
+	Error {
+		message: String,
+		timestamp: String,
+	},
+	#[serde(rename = "config-update")]
+	ConfigUpdate {
+		data: MonitorData,
+		timestamp: String,
+	},
+}
+
+impl WsMessage {
+	pub fn subscribe(token: &str) -> Self {
+		WsMessage::Subscribe {
+			token: token.to_string(),
+		}
+	}
 }
