@@ -1,8 +1,12 @@
-use crate::utils::{HeartbeatConfig, Monitor};
+use crate::utils::{HeartbeatConfig, Monitor, PushMessage};
+use crate::ws_client::PulseSender;
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::Client;
 use std::error::Error;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::RwLock;
+use tracing::warn;
 
 fn build_heartbeat_url(server_url: &str, token: &str) -> String {
 	let base_url = server_url.trim_end_matches('/');
@@ -18,7 +22,7 @@ pub async fn send_heartbeat_with_config(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder()
 		.timeout(Duration::from_secs(heartbeat.timeout.unwrap_or(10)))
 		.build()?;
@@ -67,14 +71,14 @@ pub async fn send_heartbeat_with_config(
 	}
 }
 
-/// Send heartbeat using token and server_url (WebSocket mode)
-pub async fn send_heartbeat_with_token(
+/// Send heartbeat using token and server_url via HTTP (fallback for WebSocket mode)
+pub async fn send_heartbeat_with_token_http(
 	server_url: &str,
 	token: &str,
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
 
 	let latency_str = latency_ms.to_string();
@@ -96,24 +100,94 @@ pub async fn send_heartbeat_with_token(
 	}
 }
 
-/// Send heartbeat for a monitor - handles both file mode (heartbeat config) and WebSocket mode (token)
-pub async fn send_heartbeat(
-	monitor: &Monitor,
-	server_url: Option<&str>,
+/// Send heartbeat using WebSocket connection
+pub async fn send_heartbeat_via_websocket(
+	pulse_sender: &Arc<RwLock<Option<PulseSender>>>,
+	token: &str,
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+	let start_time_iso = start_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
+	let end_time_iso = end_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
+
+	let push_message = PushMessage::new(
+		token,
+		Some(latency_ms),
+		Some(start_time_iso),
+		Some(end_time_iso),
+	);
+
+	// Get the sender and send the message
+	let sender_guard = pulse_sender.read().await;
+	if let Some(sender) = sender_guard.as_ref() {
+		sender
+			.send(push_message)
+			.await
+			.map_err(|e| -> Box<dyn Error + Send + Sync> {
+				format!("Failed to send pulse via WebSocket channel: {}", e).into()
+			})?;
+		Ok(())
+	} else {
+		Err("WebSocket pulse channel not available".into())
+	}
+}
+
+/// Send heartbeat for a monitor - handles file mode, WebSocket mode, and HTTP fallback
+pub async fn send_heartbeat(
+	monitor: &Monitor,
+	server_url: Option<&str>,
+	pulse_sender: Option<&Arc<RwLock<Option<PulseSender>>>>,
+	start_check_time: DateTime<Utc>,
+	end_check_time: DateTime<Utc>,
+	latency_ms: f64,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
 	// File mode: use explicit heartbeat config
 	if let Some(ref heartbeat) = monitor.heartbeat {
 		return send_heartbeat_with_config(heartbeat, start_check_time, end_check_time, latency_ms)
 			.await;
 	}
 
-	// WebSocket mode: build URL from token and server_url
+	// WebSocket mode: try to send via WebSocket first
+	if let (Some(token), Some(pulse_tx)) = (&monitor.token, pulse_sender) {
+		match send_heartbeat_via_websocket(
+			pulse_tx,
+			token,
+			start_check_time,
+			end_check_time,
+			latency_ms,
+		)
+		.await
+		{
+			Ok(_) => return Ok(()),
+			Err(e) => {
+				// WebSocket send failed, fall back to HTTP if server_url is available
+				warn!("WebSocket pulse failed ({}), falling back to HTTP", e);
+				if let Some(url) = server_url {
+					return send_heartbeat_with_token_http(
+						url,
+						token,
+						start_check_time,
+						end_check_time,
+						latency_ms,
+					)
+					.await;
+				}
+				return Err(e);
+			}
+		}
+	}
+
+	// HTTP-only mode (WebSocket mode without active connection)
 	if let (Some(token), Some(url)) = (&monitor.token, server_url) {
-		return send_heartbeat_with_token(url, token, start_check_time, end_check_time, latency_ms)
-			.await;
+		return send_heartbeat_with_token_http(
+			url,
+			token,
+			start_check_time,
+			end_check_time,
+			latency_ms,
+		)
+		.await;
 	}
 
 	Err("No heartbeat configuration: need either heartbeat config or token + server_url".into())

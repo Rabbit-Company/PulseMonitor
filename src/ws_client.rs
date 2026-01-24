@@ -1,11 +1,11 @@
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::{RwLock, mpsc};
 use tokio::time::{Duration, sleep};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use tracing::{error, info, warn};
 
-use crate::utils::{Config, WsMessage};
+use crate::utils::{Config, PushMessage, WsMessage};
 
 const RECONNECT_DELAY_SECS: u64 = 3;
 
@@ -19,10 +19,15 @@ fn http_to_ws_url(url: &str) -> String {
 	format!("{}/ws", ws_url)
 }
 
+/// Channel for sending pulses through WebSocket
+pub type PulseSender = mpsc::Sender<PushMessage>;
+
 /// WebSocket client that maintains connection to UptimeMonitor-Server
 pub struct WsClient {
 	ws_url: String,
 	token: String,
+	/// Shared sender for pulse messages
+	pulse_tx: Arc<RwLock<Option<mpsc::Sender<PushMessage>>>>,
 }
 
 impl WsClient {
@@ -33,7 +38,13 @@ impl WsClient {
 		WsClient {
 			ws_url,
 			token: token.to_string(),
+			pulse_tx: Arc::new(RwLock::new(None)),
 		}
+	}
+
+	/// Get a clone of the pulse sender for use by monitors
+	pub fn get_pulse_sender(&self) -> Arc<RwLock<Option<mpsc::Sender<PushMessage>>>> {
+		Arc::clone(&self.pulse_tx)
 	}
 
 	/// Start the WebSocket client and return a receiver for config updates
@@ -64,6 +75,12 @@ impl WsClient {
 				}
 			}
 
+			// Clear the pulse sender on disconnect
+			{
+				let mut tx = self.pulse_tx.write().await;
+				*tx = None;
+			}
+
 			sleep(Duration::from_secs(RECONNECT_DELAY_SECS)).await;
 		}
 	}
@@ -84,29 +101,72 @@ impl WsClient {
 		let subscribe_json = serde_json::to_string(&subscribe_msg)?;
 		write.send(Message::Text(subscribe_json.into())).await?;
 
-		// Listen for messages
-		while let Some(msg_result) = read.next().await {
-			match msg_result {
-				Ok(Message::Text(text)) => {
-					if let Err(e) = self.handle_message(&text, config_tx).await {
-						error!("Failed to handle message: {}", e);
+		// Create channel for pulse messages
+		let (pulse_tx, mut pulse_rx) = mpsc::channel::<PushMessage>(256);
+
+		// Store the pulse sender for monitors to use
+		{
+			let mut tx = self.pulse_tx.write().await;
+			*tx = Some(pulse_tx);
+		}
+
+		info!("WebSocket pulse channel established");
+
+		// Listen for messages and handle pulse sends
+		loop {
+			tokio::select! {
+				// Handle incoming WebSocket messages
+				msg_result = read.next() => {
+					match msg_result {
+						Some(Ok(Message::Text(text))) => {
+							if let Err(e) = self.handle_message(&text, config_tx).await {
+								error!("Failed to handle message: {}", e);
+							}
+						}
+						Some(Ok(Message::Ping(data))) => {
+							if let Err(e) = write.send(Message::Pong(data)).await {
+								error!("Failed to send pong: {}", e);
+								break;
+							}
+						}
+						Some(Ok(Message::Close(_))) => {
+							info!("Server closed the connection");
+							break;
+						}
+						Some(Err(e)) => {
+							error!("WebSocket error: {}", e);
+							break;
+						}
+						None => {
+							info!("WebSocket stream ended");
+							break;
+						}
+						_ => {}
 					}
 				}
-				Ok(Message::Ping(data)) => {
-					if let Err(e) = write.send(Message::Pong(data)).await {
-						error!("Failed to send pong: {}", e);
-						break;
+				// Handle outgoing pulse messages
+				pulse_msg = pulse_rx.recv() => {
+					match pulse_msg {
+						Some(push_message) => {
+							match serde_json::to_string(&push_message) {
+								Ok(json) => {
+									if let Err(e) = write.send(Message::Text(json.into())).await {
+										error!("Failed to send pulse via WebSocket: {}", e);
+										break;
+									}
+								}
+								Err(e) => {
+									error!("Failed to serialize pulse message: {}", e);
+								}
+							}
+						}
+						None => {
+							// Channel closed, exit the loop
+							warn!("Pulse channel closed");
+							break;
+						}
 					}
 				}
-				Ok(Message::Close(_)) => {
-					info!("Server closed the connection");
-					break;
-				}
-				Err(e) => {
-					error!("WebSocket error: {}", e);
-					break;
-				}
-				_ => {}
 			}
 		}
 
@@ -168,6 +228,12 @@ impl WsClient {
 				if let Err(e) = config_tx.send(config).await {
 					error!("Failed to send config update: {}", e);
 				}
+			}
+			WsMessage::Pushed {
+				monitor_id: _,
+				timestamp: _,
+			} => {
+				// Pulse acknowledged by server - no action needed
 			}
 			WsMessage::Subscribe { .. } => {
 				// This shouldn't be received from server

@@ -95,9 +95,14 @@ async fn run_file_mode(config: Config) {
 
 async fn run_websocket_mode(server_url: String, token: String) {
 	let client = Arc::new(WsClient::new(&server_url, &token));
+
+	// Get the pulse sender before starting the client
+	let pulse_sender = client.get_pulse_sender();
+
 	let mut config_rx = client.start().await;
 
-	let runner = MonitorRunner::with_server_url(server_url);
+	// Create runner with WebSocket pulse sender
+	let runner = MonitorRunner::with_websocket(server_url, pulse_sender);
 	let mut _current_handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
 
 	info!("Waiting for configuration from server...");

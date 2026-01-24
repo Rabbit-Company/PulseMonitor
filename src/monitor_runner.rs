@@ -4,7 +4,7 @@ use crate::services::{
 	mysql::is_mysql_online, postgresql::is_postgresql_online, redis::is_redis_online,
 	smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online,
 };
-use crate::utils::{Config, Monitor};
+use crate::utils::{Config, Monitor, PushMessage};
 use chrono::Utc;
 use comfy_table::{Cell, Color, Table, presets::UTF8_FULL};
 use inline_colorization::{color_reset, color_white};
@@ -48,12 +48,17 @@ fn get_service_type(monitor: &Monitor) -> &'static str {
 	}
 }
 
+/// Type alias for the pulse sender
+pub type PulseSender = Arc<RwLock<Option<mpsc::Sender<PushMessage>>>>;
+
 /// Manages running monitor tasks
 pub struct MonitorRunner {
 	/// Map of monitor name to its cancel channel
 	running_monitors: Arc<RwLock<HashMap<String, mpsc::Sender<()>>>>,
-	/// Server URL for WebSocket mode (used to build heartbeat URLs)
+	/// Server URL for WebSocket mode (used as HTTP fallback)
 	server_url: Option<String>,
+	/// WebSocket pulse sender (shared with WsClient)
+	pulse_sender: Option<PulseSender>,
 }
 
 impl MonitorRunner {
@@ -62,14 +67,16 @@ impl MonitorRunner {
 		MonitorRunner {
 			running_monitors: Arc::new(RwLock::new(HashMap::new())),
 			server_url: None,
+			pulse_sender: None,
 		}
 	}
 
-	/// Create a new MonitorRunner for WebSocket mode with server_url
-	pub fn with_server_url(server_url: String) -> Self {
+	/// Create a new MonitorRunner for WebSocket mode with server_url and pulse sender
+	pub fn with_websocket(server_url: String, pulse_sender: PulseSender) -> Self {
 		MonitorRunner {
 			running_monitors: Arc::new(RwLock::new(HashMap::new())),
 			server_url: Some(server_url),
+			pulse_sender: Some(pulse_sender),
 		}
 	}
 
@@ -86,6 +93,7 @@ impl MonitorRunner {
 			let (cancel_tx, cancel_rx) = mpsc::channel::<()>(1);
 			let monitor_clone = monitor.clone();
 			let server_url_clone = self.server_url.clone();
+			let pulse_sender_clone = self.pulse_sender.clone();
 			let service_type = get_service_type(monitor);
 
 			rows.push(vec![
@@ -102,7 +110,13 @@ impl MonitorRunner {
 
 			// Spawn the monitor task
 			let handle = tokio::spawn(async move {
-				run_monitor(monitor_clone, server_url_clone, cancel_rx).await;
+				run_monitor(
+					monitor_clone,
+					server_url_clone,
+					pulse_sender_clone,
+					cancel_rx,
+				)
+				.await;
 			});
 
 			handles.push(handle);
@@ -159,6 +173,7 @@ impl MonitorRunner {
 async fn run_monitor(
 	monitor: Monitor,
 	server_url: Option<String>,
+	pulse_sender: Option<PulseSender>,
 	mut cancel_rx: mpsc::Receiver<()>,
 ) {
 	let mut interval_timer = tokio::time::interval(Duration::from_secs(monitor.interval));
@@ -172,13 +187,17 @@ async fn run_monitor(
 				break;
 			}
 			_ = interval_timer.tick() => {
-				run_single_check(&monitor, server_url.as_deref()).await;
+				run_single_check(&monitor, server_url.as_deref(), pulse_sender.as_ref()).await;
 			}
 		}
 	}
 }
 
-async fn run_single_check(monitor: &Monitor, server_url: Option<&str>) {
+async fn run_single_check(
+	monitor: &Monitor,
+	server_url: Option<&str>,
+	pulse_sender: Option<&PulseSender>,
+) {
 	let start_check_time = Utc::now();
 	let start_time = Instant::now();
 
@@ -224,6 +243,7 @@ async fn run_single_check(monitor: &Monitor, server_url: Option<&str>) {
 			if let Err(e) = send_heartbeat(
 				monitor,
 				server_url,
+				pulse_sender,
 				start_check_time,
 				end_check_time,
 				latency_ms,

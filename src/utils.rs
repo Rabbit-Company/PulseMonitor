@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.11.0";
+pub const VERSION: &str = "v3.12.0";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -137,6 +137,59 @@ pub struct MonitorData {
 	pub monitors: Vec<Monitor>,
 }
 
+/// Push message to send a pulse via WebSocket
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PushMessage {
+	pub action: String,
+	pub token: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub latency: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub start_time: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub end_time: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub custom1: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub custom2: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub custom3: Option<f64>,
+}
+
+impl PushMessage {
+	pub fn new(
+		token: &str,
+		latency: Option<f64>,
+		start_time: Option<String>,
+		end_time: Option<String>,
+	) -> Self {
+		PushMessage {
+			action: "push".to_string(),
+			token: token.to_string(),
+			latency,
+			start_time,
+			end_time,
+			custom1: None,
+			custom2: None,
+			custom3: None,
+		}
+	}
+
+	#[allow(dead_code)]
+	pub fn with_custom_metrics(
+		mut self,
+		custom1: Option<f64>,
+		custom2: Option<f64>,
+		custom3: Option<f64>,
+	) -> Self {
+		self.custom1 = custom1;
+		self.custom2 = custom2;
+		self.custom3 = custom3;
+		self
+	}
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "kebab-case")]
 pub enum WsMessage {
@@ -162,6 +215,11 @@ pub enum WsMessage {
 	#[serde(rename = "config-update")]
 	ConfigUpdate {
 		data: MonitorData,
+		timestamp: String,
+	},
+	Pushed {
+		#[serde(rename = "monitorId")]
+		monitor_id: String,
 		timestamp: String,
 	},
 }
