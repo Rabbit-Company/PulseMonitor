@@ -61,7 +61,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -71,7 +71,7 @@ timeout = 10
 url = "https://rabbit-company.com"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -90,7 +90,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -113,7 +113,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -137,7 +137,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -163,7 +163,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -186,7 +186,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -213,7 +213,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -238,7 +238,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -261,7 +261,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -284,7 +284,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -308,7 +308,7 @@ timeout = 10
 url = "https://example.com/api/push/token?status=up&msg=OK&ping={latency}"
 headers = [
 	#{ "Authorization" = "Bearer YOUR_BEARER_TOKEN" },
-	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.1; +https://github.com/Rabbit-Company/PulseMonitor)" },
+	{ "User-Agent" = "Mozilla/5.0 (compatible; PulseMonitor/3.12.2; +https://github.com/Rabbit-Company/PulseMonitor)" },
 	{ "X-Latency" = "{latency}" },
 ]
 
@@ -444,16 +444,13 @@ systemctl enable --now pulsemonitor
 ## Upgrade
 
 ```bash
-# Stop service
-systemctl stop pulsemonitor
-
 # Download Pulse Monitor
 wget https://github.com/Rabbit-Company/PulseMonitor/releases/latest/download/pulsemonitor-$(uname -m)-gnu
 sudo chmod 755 pulsemonitor-$(uname -m)-gnu
 sudo mv pulsemonitor-$(uname -m)-gnu /usr/local/bin/pulsemonitor
 
-# Start service
-systemctl start pulsemonitor
+# Restart service
+systemctl restart pulsemonitor
 ```
 
 ## Environment Variables

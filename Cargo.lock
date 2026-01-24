@@ -1633,7 +1633,7 @@ dependencies = [
 
 [[package]]
 name = "pulsemonitor"
-version = "3.12.1"
+version = "3.12.2"
 dependencies = [
  "chrono",
  "clap",

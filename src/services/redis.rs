@@ -1,5 +1,7 @@
 use std::error::Error;
-use tokio::time::Duration;
+use std::time::Duration;
+
+use redis::AsyncConnectionConfig;
 
 use crate::utils::Monitor;
 
@@ -14,12 +16,15 @@ pub async fn is_redis_online(
 	let timeout = Duration::from_secs(redis_config.timeout.unwrap_or(3));
 	let client = redis::Client::open(redis_config.url.as_str())?;
 
-	tokio::time::timeout(timeout, async {
-		let mut conn = client.get_multiplexed_async_connection().await?;
-		let _: String = redis::cmd("PING").query_async(&mut conn).await?;
-		Ok(None)
-	})
-	.await
-	.map_err(|_| "Redis connection timeout".into())
-	.and_then(|result| result)
+	let config = AsyncConnectionConfig::new()
+		.set_connection_timeout(Some(timeout))
+		.set_response_timeout(Some(timeout));
+
+	let mut conn = client
+		.get_multiplexed_async_connection_with_config(&config)
+		.await?;
+
+	let _: String = redis::cmd("PING").query_async(&mut conn).await?;
+
+	Ok(None)
 }
