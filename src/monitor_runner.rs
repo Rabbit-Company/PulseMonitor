@@ -53,7 +53,7 @@ pub type PulseSender = Arc<RwLock<Option<mpsc::Sender<PushMessage>>>>;
 
 /// Manages running monitor tasks
 pub struct MonitorRunner {
-	/// Map of monitor name to its cancel channel
+	/// Map of monitor token/key to its cancel channel
 	running_monitors: Arc<RwLock<HashMap<String, mpsc::Sender<()>>>>,
 	/// Server URL for WebSocket mode (used as HTTP fallback)
 	server_url: Option<String>,
@@ -102,10 +102,14 @@ impl MonitorRunner {
 				Cell::new(&monitor.name).fg(Color::Green),
 			]);
 
-			// Store the cancel channel
+			// Store the cancel channel using token as unique key (fallback to name if no token)
+			let monitor_key = monitor
+				.token
+				.clone()
+				.unwrap_or_else(|| monitor.name.clone());
 			{
 				let mut running = self.running_monitors.write().await;
-				running.insert(monitor.name.clone(), cancel_tx);
+				running.insert(monitor_key, cancel_tx);
 			}
 
 			// Spawn the monitor task
@@ -148,8 +152,8 @@ impl MonitorRunner {
 	/// Stop all running monitors
 	pub async fn stop_all(&self) {
 		let mut running = self.running_monitors.write().await;
-		for (name, cancel_tx) in running.drain() {
-			info!("Stopping monitor: {}", name);
+		for (key, cancel_tx) in running.drain() {
+			info!("Stopping monitor: {}", key);
 			let _ = cancel_tx.send(()).await;
 		}
 	}
