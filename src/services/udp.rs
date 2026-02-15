@@ -2,9 +2,9 @@ use std::error::Error;
 use tokio::net::UdpSocket;
 use tokio::time::{Duration, timeout};
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
-pub async fn is_udp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+pub async fn is_udp_online(monitor: &Monitor) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let udp = monitor
 		.udp
 		.as_ref()
@@ -21,11 +21,11 @@ pub async fn is_udp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Err
 	if udp.expect_response.unwrap_or(false) {
 		let mut buf = [0u8; 1024];
 		match timeout(timeout_duration, socket.recv_from(&mut buf)).await {
-			Ok(Ok((_n, _src))) => Ok(None),
+			Ok(Ok((_n, _src))) => Ok(CheckResult::from_latency(None)),
 			Ok(Err(e)) => Err(format!("Failed to receive UDP response: {}", e).into()),
 			Err(_) => Err("UDP response timed out".into()),
 		}
 	} else {
-		Ok(None)
+		Ok(CheckResult::from_latency(None))
 	}
 }

@@ -1,22 +1,24 @@
 # Service Monitors
 
-PulseMonitor supports 11 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
+PulseMonitor supports 13 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
 
 ## Overview
 
-| Service                   | Protocol    | Default Timeout |
-| ------------------------- | ----------- | --------------- |
-| [HTTP](#http)             | HTTP/HTTPS  | 10s             |
-| [WebSocket](#websocket)   | WS/WSS      | 3s              |
-| [TCP](#tcp)               | TCP         | 5s              |
-| [UDP](#udp)               | UDP         | 3s              |
-| [ICMP](#icmp)             | ICMP (ping) | 3s              |
-| [SMTP](#smtp)             | SMTP/SMTPS  | -               |
-| [IMAP](#imap)             | IMAP/IMAPS  | -               |
-| [MySQL](#mysql)           | MySQL       | 3s              |
-| [MSSQL](#mssql)           | TDS         | 3s              |
-| [PostgreSQL](#postgresql) | PostgreSQL  | 3s              |
-| [Redis](#redis)           | RESP        | 3s              |
+| Service                                 | Protocol         | Default Timeout |
+| --------------------------------------- | ---------------- | --------------- |
+| [HTTP](#http)                           | HTTP/HTTPS       | 10s             |
+| [WebSocket](#websocket)                 | WS/WSS           | 3s              |
+| [TCP](#tcp)                             | TCP              | 5s              |
+| [UDP](#udp)                             | UDP              | 3s              |
+| [ICMP](#icmp)                           | ICMP (ping)      | 3s              |
+| [SMTP](#smtp)                           | SMTP/SMTPS       | -               |
+| [IMAP](#imap)                           | IMAP/IMAPS       | -               |
+| [MySQL](#mysql)                         | MySQL            | 3s              |
+| [MSSQL](#mssql)                         | TDS              | 3s              |
+| [PostgreSQL](#postgresql)               | PostgreSQL       | 3s              |
+| [Redis](#redis)                         | RESP             | 3s              |
+| [Minecraft Java](#minecraft-java)       | MC Java Protocol | 3s              |
+| [Minecraft Bedrock](#minecraft-bedrock) | MC Bedrock (UDP) | 3s              |
 
 ## HTTP
 
@@ -572,4 +574,150 @@ timeout = 3
 [monitors.redis]
 url = "redis://:cluster_password@redis-node-1.example.com:6379"
 timeout = 3
+```
+
+---
+
+## Minecraft Java
+
+Monitor Minecraft Java Edition servers using the Server List Ping protocol. Returns server latency and current player count.
+
+### Configuration
+
+```toml
+[monitors.minecraft-java]
+host = "mc.example.com"    # Required: Server hostname or IP
+port = 25565               # Optional: Server port (default: 25565)
+timeout = 3                # Optional: Seconds (default: 3)
+```
+
+### Options
+
+| Option    | Type    | Default | Description                   |
+| --------- | ------- | ------- | ----------------------------- |
+| `host`    | string  | -       | Server hostname or IP address |
+| `port`    | integer | 25565   | Server port                   |
+| `timeout` | integer | 3       | Ping timeout in seconds       |
+
+### Success Criteria
+
+- Server List Ping response received
+- Server info (player count) returned
+
+### Custom Metrics
+
+Minecraft Java monitors populate the following custom metrics, available as template placeholders in heartbeat URLs and headers:
+
+| Placeholder     | Metric    | Description                 |
+| --------------- | --------- | --------------------------- |
+| `{custom1}`     | `custom1` | Current online player count |
+| `{playerCount}` | `custom1` | Alias for `{custom1}`       |
+
+### Examples
+
+**Standard server:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Minecraft Server"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&players={playerCount}"
+
+[monitors.minecraft-java]
+host = "mc.example.com"
+```
+
+**Custom port with timeout:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "MC Java (Custom Port)"
+interval = 60
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}"
+
+[monitors.minecraft-java]
+host = "192.168.1.100"
+port = 25566
+timeout = 10
+```
+
+---
+
+## Minecraft Bedrock
+
+Monitor Minecraft Bedrock Edition servers using the Bedrock ping protocol (UDP). Returns server latency and current player count.
+
+### Configuration
+
+```toml
+[monitors.minecraft-bedrock]
+host = "bedrock.example.com"   # Required: Server hostname or IP
+port = 19132                   # Optional: Server port (default: 19132)
+timeout = 3                    # Optional: Seconds (default: 3)
+```
+
+### Options
+
+| Option    | Type    | Default | Description                   |
+| --------- | ------- | ------- | ----------------------------- |
+| `host`    | string  | -       | Server hostname or IP address |
+| `port`    | integer | 19132   | Server port                   |
+| `timeout` | integer | 3       | Ping timeout in seconds       |
+
+### Success Criteria
+
+- Bedrock ping response received
+- Server info (player count) returned
+
+### Custom Metrics
+
+Minecraft Bedrock monitors populate the following custom metrics, available as template placeholders in heartbeat URLs and headers:
+
+| Placeholder     | Metric    | Description                 |
+| --------------- | --------- | --------------------------- |
+| `{custom1}`     | `custom1` | Current online player count |
+| `{playerCount}` | `custom1` | Alias for `{custom1}`       |
+
+### Examples
+
+**Standard Bedrock server:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Bedrock Server"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&players={playerCount}"
+
+[monitors.minecraft-bedrock]
+host = "bedrock.example.com"
+```
+
+**Custom port:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "MC Bedrock (Custom Port)"
+interval = 60
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}"
+
+[monitors.minecraft-bedrock]
+host = "192.168.1.100"
+port = 19133
+timeout = 10
 ```

@@ -2,7 +2,48 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.12.2";
+pub const VERSION: &str = "v3.13.0";
+
+#[derive(Default, Debug, Clone)]
+pub struct CheckResult {
+	pub latency: Option<f64>,
+	pub custom1: Option<f64>,
+	pub custom2: Option<f64>,
+	pub custom3: Option<f64>,
+}
+
+impl CheckResult {
+	pub fn from_latency(latency: Option<f64>) -> Self {
+		CheckResult {
+			latency,
+			custom1: None,
+			custom2: None,
+			custom3: None,
+		}
+	}
+}
+
+pub fn resolve_custom_placeholders(
+	monitor: &Monitor,
+	result: &CheckResult,
+) -> Vec<(&'static str, String)> {
+	let mut placeholders = Vec::new();
+
+	let custom1_str = result.custom1.map(|v| v.to_string()).unwrap_or_default();
+	let custom2_str = result.custom2.map(|v| v.to_string()).unwrap_or_default();
+	let custom3_str = result.custom3.map(|v| v.to_string()).unwrap_or_default();
+
+	placeholders.push(("{custom1}", custom1_str.clone()));
+	placeholders.push(("{custom2}", custom2_str.clone()));
+	placeholders.push(("{custom3}", custom3_str.clone()));
+
+	if monitor.minecraft_java.is_some() || monitor.minecraft_bedrock.is_some() {
+		// Minecraft: custom1 = player count
+		placeholders.push(("{playerCount}", custom1_str));
+	}
+
+	placeholders
+}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +73,10 @@ pub struct Monitor {
 	pub mssql: Option<MssqlConfig>,
 	pub postgresql: Option<PostgreSqlConfig>,
 	pub redis: Option<RedisConfig>,
+	#[serde(rename = "minecraft-java")]
+	pub minecraft_java: Option<MinecraftJavaConfig>,
+	#[serde(rename = "minecraft-bedrock")]
+	pub minecraft_bedrock: Option<MinecraftBedrockConfig>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -126,6 +171,22 @@ pub struct ImapConfig {
 #[serde(rename_all = "camelCase")]
 pub struct SmtpConfig {
 	pub url: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MinecraftJavaConfig {
+	pub host: String,
+	pub port: Option<u16>,
+	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MinecraftBedrockConfig {
+	pub host: String,
+	pub port: Option<u16>,
+	pub timeout: Option<u64>,
 }
 
 // WebSocket Protocol Messages

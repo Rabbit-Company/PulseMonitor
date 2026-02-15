@@ -1,4 +1,6 @@
-use crate::utils::{HeartbeatConfig, Monitor, PushMessage};
+use crate::utils::{
+	CheckResult, HeartbeatConfig, Monitor, PushMessage, resolve_custom_placeholders,
+};
 use crate::ws_client::PulseSender;
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::Client;
@@ -11,9 +13,32 @@ use tracing::warn;
 fn build_heartbeat_url(server_url: &str, token: &str) -> String {
 	let base_url = server_url.trim_end_matches('/');
 	format!(
-		"{}/v1/push/{}?latency={{latency}}&startTime={{startTimeISO}}&endTime={{endTimeISO}}",
+		"{}/v1/push/{}?latency={{latency}}&startTime={{startTimeISO}}&endTime={{endTimeISO}}&custom1={{custom1}}&custom2={{custom2}}&custom3={{custom3}}",
 		base_url, token
 	)
+}
+
+fn apply_templates(
+	template: &str,
+	latency_str: &str,
+	start_time_iso: &str,
+	end_time_iso: &str,
+	start_time_unix: &str,
+	end_time_unix: &str,
+	custom_placeholders: &[(&str, String)],
+) -> String {
+	let mut result = template
+		.replace("{latency}", latency_str)
+		.replace("{startTimeISO}", start_time_iso)
+		.replace("{endTimeISO}", end_time_iso)
+		.replace("{startTimeUnix}", start_time_unix)
+		.replace("{endTimeUnix}", end_time_unix);
+
+	for (placeholder, value) in custom_placeholders {
+		result = result.replace(placeholder, value);
+	}
+
+	result
 }
 
 /// Send heartbeat using explicit HeartbeatConfig (file mode)
@@ -22,6 +47,7 @@ pub async fn send_heartbeat_with_config(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
+	custom_placeholders: &[(&str, String)],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder()
 		.timeout(Duration::from_secs(heartbeat.timeout.unwrap_or(10)))
@@ -33,13 +59,15 @@ pub async fn send_heartbeat_with_config(
 	let start_time_iso = start_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
 	let end_time_iso = end_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
 
-	let url = heartbeat
-		.url
-		.replace("{latency}", &latency_str)
-		.replace("{startTimeISO}", &start_time_iso)
-		.replace("{endTimeISO}", &end_time_iso)
-		.replace("{startTimeUnix}", &start_time_unix)
-		.replace("{endTimeUnix}", &end_time_unix);
+	let url = apply_templates(
+		&heartbeat.url,
+		&latency_str,
+		&start_time_iso,
+		&end_time_iso,
+		&start_time_unix,
+		&end_time_unix,
+		custom_placeholders,
+	);
 
 	let mut request = match heartbeat.method.to_uppercase().as_str() {
 		"GET" => client.get(&url),
@@ -51,12 +79,15 @@ pub async fn send_heartbeat_with_config(
 	if let Some(headers) = &heartbeat.headers {
 		for header in headers {
 			for (key, value) in header {
-				let value_with_templates = value
-					.replace("{latency}", &latency_str)
-					.replace("{startTimeISO}", &start_time_iso)
-					.replace("{endTimeISO}", &end_time_iso)
-					.replace("{startTimeUnix}", &start_time_unix)
-					.replace("{endTimeUnix}", &end_time_unix);
+				let value_with_templates = apply_templates(
+					value,
+					&latency_str,
+					&start_time_iso,
+					&end_time_iso,
+					&start_time_unix,
+					&end_time_unix,
+					custom_placeholders,
+				);
 				request = request.header(key, value_with_templates);
 			}
 		}
@@ -78,18 +109,26 @@ pub async fn send_heartbeat_with_token_http(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
+	custom_placeholders: &[(&str, String)],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
 
 	let latency_str = latency_ms.to_string();
+	let start_time_unix = start_check_time.timestamp_millis().to_string();
+	let end_time_unix = end_check_time.timestamp_millis().to_string();
 	let start_time_iso = start_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
 	let end_time_iso = end_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
 
 	let url_template = build_heartbeat_url(server_url, token);
-	let url = url_template
-		.replace("{latency}", &latency_str)
-		.replace("{startTimeISO}", &start_time_iso)
-		.replace("{endTimeISO}", &end_time_iso);
+	let url = apply_templates(
+		&url_template,
+		&latency_str,
+		&start_time_iso,
+		&end_time_iso,
+		&start_time_unix,
+		&end_time_unix,
+		custom_placeholders,
+	);
 
 	let response = client.get(&url).send().await?;
 
@@ -107,6 +146,7 @@ pub async fn send_heartbeat_via_websocket(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
+	check_result: &CheckResult,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let start_time_iso = start_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
 	let end_time_iso = end_check_time.to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -116,6 +156,11 @@ pub async fn send_heartbeat_via_websocket(
 		Some(latency_ms),
 		Some(start_time_iso),
 		Some(end_time_iso),
+	)
+	.with_custom_metrics(
+		check_result.custom1,
+		check_result.custom2,
+		check_result.custom3,
 	);
 
 	// Get the sender and send the message
@@ -141,11 +186,20 @@ pub async fn send_heartbeat(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
+	check_result: &CheckResult,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
+	let custom_placeholders = resolve_custom_placeholders(monitor, check_result);
+
 	// File mode: use explicit heartbeat config
 	if let Some(ref heartbeat) = monitor.heartbeat {
-		return send_heartbeat_with_config(heartbeat, start_check_time, end_check_time, latency_ms)
-			.await;
+		return send_heartbeat_with_config(
+			heartbeat,
+			start_check_time,
+			end_check_time,
+			latency_ms,
+			&custom_placeholders,
+		)
+		.await;
 	}
 
 	// WebSocket mode: try to send via WebSocket first
@@ -156,6 +210,7 @@ pub async fn send_heartbeat(
 			start_check_time,
 			end_check_time,
 			latency_ms,
+			check_result,
 		)
 		.await
 		{
@@ -170,6 +225,7 @@ pub async fn send_heartbeat(
 						start_check_time,
 						end_check_time,
 						latency_ms,
+						&custom_placeholders,
 					)
 					.await;
 				}
@@ -186,6 +242,7 @@ pub async fn send_heartbeat(
 			start_check_time,
 			end_check_time,
 			latency_ms,
+			&custom_placeholders,
 		)
 		.await;
 	}

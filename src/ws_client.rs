@@ -7,7 +7,7 @@ use tracing::{error, info, warn};
 
 use crate::utils::{Config, PushMessage, WsMessage};
 
-const RECONNECT_DELAY_SECS: u64 = 3;
+const RECONNECT_DELAY_SECS: u64 = 1;
 
 /// Convert HTTP(S) URL to WebSocket URL
 fn http_to_ws_url(url: &str) -> String {

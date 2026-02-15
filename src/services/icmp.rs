@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_icmp_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let icmp = monitor
 		.icmp
 		.as_ref()
@@ -31,13 +31,18 @@ pub async fn is_icmp_online(
 
 				if parts.len() >= 2 {
 					if let Ok(avg) = parts[1].parse::<f64>() {
-						return Ok(Some(avg));
+						return Ok(CheckResult {
+							latency: Some(avg),
+							custom1: None,
+							custom2: None,
+							custom3: None,
+						});
 					}
 				}
 			}
 		}
 
-		Ok(None)
+		Ok(CheckResult::from_latency(None))
 	} else {
 		let stderr = String::from_utf8_lossy(&output.stderr);
 		Err(format!("Ping to {} failed: {}", icmp.host, stderr).into())

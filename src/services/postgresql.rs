@@ -2,11 +2,11 @@ use std::error::Error;
 use tokio::time::{Duration, timeout};
 use tokio_postgres::{Client, NoTls};
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_postgresql_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let postgresql = monitor
 		.postgresql
 		.as_ref()
@@ -37,7 +37,7 @@ pub async fn is_postgresql_online(
 		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
 
 		match query_result {
-			Ok(Ok(_)) => Ok(None),
+			Ok(Ok(_)) => Ok(CheckResult::from_latency(None)),
 			Ok(Err(e)) => Err(Box::new(e)),
 			Err(_) => Err("PostgreSQL query timed out".into()),
 		}
@@ -58,7 +58,7 @@ pub async fn is_postgresql_online(
 		let query_result = timeout(timeout_duration, client.simple_query("SELECT 1")).await;
 
 		match query_result {
-			Ok(Ok(_)) => Ok(None),
+			Ok(Ok(_)) => Ok(CheckResult::from_latency(None)),
 			Ok(Err(e)) => Err(Box::new(e)),
 			Err(_) => Err("PostgreSQL query timed out".into()),
 		}

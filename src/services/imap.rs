@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_imap_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let imap = monitor
 		.imap
 		.as_ref()
@@ -18,5 +18,5 @@ pub async fn is_imap_online(
 
 	imap_session.logout()?;
 
-	Ok(None)
+	Ok(CheckResult::from_latency(None))
 }

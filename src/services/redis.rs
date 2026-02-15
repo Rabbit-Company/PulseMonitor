@@ -3,11 +3,11 @@ use std::time::Duration;
 
 use redis::AsyncConnectionConfig;
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_redis_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let redis_config = monitor
 		.redis
 		.as_ref()
@@ -26,5 +26,5 @@ pub async fn is_redis_online(
 
 	let _: String = redis::cmd("PING").query_async(&mut conn).await?;
 
-	Ok(None)
+	Ok(CheckResult::from_latency(None))
 }

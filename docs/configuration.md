@@ -36,7 +36,7 @@ debug = false            # Enable verbose logging (optional)
 [monitors.heartbeat]     # Where to send success notifications
 # ... heartbeat config
 
-[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, smtp, imap, mysql, mssql, postgresql, redis
+[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, smtp, imap, mysql, mssql, postgresql, redis, minecraft-java, minecraft-bedrock
 # ... service-specific config
 ```
 
@@ -76,6 +76,8 @@ Use these variables in `url` and `headers`:
 | `{startTimeUnix}` | Check start (Unix ms)   | `1753081599568`            |
 | `{endTimeUnix}`   | Check end (Unix ms)     | `1753081600000`            |
 
+> **Note:** `{custom1}`, `{custom2}` and `{custom3}` are populated by specific service monitors. For Minecraft Java and Bedrock monitors, `{custom1}` and its alias `{playerCount}` contain the current online player count...
+
 ### Example with All Placeholders
 
 ```toml
@@ -102,7 +104,7 @@ url = "https://api.example.com/health"
 timeout = 10             # Seconds (default: 10)
 headers = [
   { "Authorization" = "Bearer TOKEN" },
-  { "User-Agent" = "PulseMonitor/3.12" }
+  { "User-Agent" = "PulseMonitor/3.13.0" }
 ]
 ```
 
@@ -201,6 +203,28 @@ url = "redis://username:password@localhost:6379/0"
 timeout = 3              # Seconds (default: 3)
 ```
 
+### Minecraft Java Monitoring
+
+```toml
+[monitors.minecraft-java]
+host = "mc.example.com"
+port = 25565             # Server port (default: 25565)
+timeout = 3              # Seconds (default: 3)
+```
+
+Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Java](docs/services.md#minecraft-java) for details.
+
+### Minecraft Bedrock Monitoring
+
+```toml
+[monitors.minecraft-bedrock]
+host = "bedrock.example.com"
+port = 19132             # Server port (default: 19132)
+timeout = 3              # Seconds (default: 3)
+```
+
+Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Bedrock](docs/services.md#minecraft-bedrock) for details.
+
 ## Complete Configuration Example
 
 ```toml
@@ -255,6 +279,23 @@ url = "https://uptime.example.com/api/push/redis-token?latency={latency}"
 
 [monitors.redis]
 url = "redis://:password@redis.example.com:6379/0"
+timeout = 3
+
+# Minecraft Java Server Monitor
+[[monitors]]
+enabled = true
+name = "MC Survival Server"
+interval = 30
+debug = false
+
+[monitors.heartbeat]
+method = "GET"
+timeout = 10
+url = "https://uptime.example.com/api/push/mc-token?latency={latency}&players={playerCount}"
+
+[monitors.minecraft-java]
+host = "mc.example.com"
+port = 25565
 timeout = 3
 ```
 

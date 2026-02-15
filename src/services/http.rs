@@ -4,11 +4,11 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_http_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let http = monitor
 		.http
 		.as_ref()
@@ -38,7 +38,12 @@ pub async fn is_http_online(
 	let request_latency = request_start.elapsed().as_secs_f64() * 1000.0;
 
 	if response.status().is_success() {
-		Ok(Some(request_latency))
+		Ok(CheckResult {
+			latency: Some(request_latency),
+			custom1: None,
+			custom2: None,
+			custom3: None,
+		})
 	} else {
 		Err(format!("Request failed with status: {}", response.status()).into())
 	}

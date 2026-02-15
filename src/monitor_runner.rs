@@ -1,10 +1,19 @@
 use crate::heartbeat::send_heartbeat;
 use crate::services::{
-	http::is_http_online, icmp::is_icmp_online, imap::is_imap_online, mssql::is_mssql_online,
-	mysql::is_mysql_online, postgresql::is_postgresql_online, redis::is_redis_online,
-	smtp::is_smtp_online, tcp::is_tcp_online, udp::is_udp_online, ws::is_ws_online,
+	http::is_http_online,
+	icmp::is_icmp_online,
+	imap::is_imap_online,
+	minecraft::{is_minecraft_bedrock_online, is_minecraft_java_online},
+	mssql::is_mssql_online,
+	mysql::is_mysql_online,
+	postgresql::is_postgresql_online,
+	redis::is_redis_online,
+	smtp::is_smtp_online,
+	tcp::is_tcp_online,
+	udp::is_udp_online,
+	ws::is_ws_online,
 };
-use crate::utils::{Config, Monitor, PushMessage};
+use crate::utils::{CheckResult, Config, Monitor, PushMessage};
 use chrono::Utc;
 use comfy_table::{Cell, Color, Table, presets::UTF8_FULL};
 use inline_colorization::{color_reset, color_white};
@@ -43,6 +52,10 @@ fn get_service_type(monitor: &Monitor) -> &'static str {
 		"PostgreSQL"
 	} else if monitor.redis.is_some() {
 		"Redis"
+	} else if monitor.minecraft_java.is_some() {
+		"MC-Java"
+	} else if monitor.minecraft_bedrock.is_some() {
+		"MC-Bedrock"
 	} else {
 		"None"
 	}
@@ -182,7 +195,7 @@ async fn run_monitor(
 ) {
 	let mut interval_timer = tokio::time::interval(Duration::from_secs(monitor.interval));
 	// First tick happens immediately, skip it to avoid double execution
-	interval_timer.tick().await;
+	//interval_timer.tick().await;
 
 	loop {
 		tokio::select! {
@@ -205,44 +218,50 @@ async fn run_single_check(
 	let start_check_time = Utc::now();
 	let start_time = Instant::now();
 
-	let result = if monitor.http.is_some() {
-		is_http_online(monitor).await
-	} else if monitor.ws.is_some() {
-		is_ws_online(monitor).await
-	} else if monitor.tcp.is_some() {
-		is_tcp_online(monitor).await
-	} else if monitor.udp.is_some() {
-		is_udp_online(monitor).await
-	} else if monitor.icmp.is_some() {
-		is_icmp_online(monitor).await
-	} else if monitor.smtp.is_some() {
-		is_smtp_online(monitor).await
-	} else if monitor.imap.is_some() {
-		is_imap_online(monitor).await
-	} else if monitor.mysql.is_some() {
-		is_mysql_online(monitor).await
-	} else if monitor.mssql.is_some() {
-		is_mssql_online(monitor).await
-	} else if monitor.postgresql.is_some() {
-		is_postgresql_online(monitor).await
-	} else if monitor.redis.is_some() {
-		is_redis_online(monitor).await
-	} else {
-		Ok(None)
-	};
+	let result: Result<CheckResult, Box<dyn std::error::Error + Send + Sync>> =
+		if monitor.http.is_some() {
+			is_http_online(monitor).await
+		} else if monitor.ws.is_some() {
+			is_ws_online(monitor).await
+		} else if monitor.tcp.is_some() {
+			is_tcp_online(monitor).await
+		} else if monitor.udp.is_some() {
+			is_udp_online(monitor).await
+		} else if monitor.icmp.is_some() {
+			is_icmp_online(monitor).await
+		} else if monitor.smtp.is_some() {
+			is_smtp_online(monitor).await
+		} else if monitor.imap.is_some() {
+			is_imap_online(monitor).await
+		} else if monitor.mysql.is_some() {
+			is_mysql_online(monitor).await
+		} else if monitor.mssql.is_some() {
+			is_mssql_online(monitor).await
+		} else if monitor.postgresql.is_some() {
+			is_postgresql_online(monitor).await
+		} else if monitor.redis.is_some() {
+			is_redis_online(monitor).await
+		} else if monitor.minecraft_java.is_some() {
+			is_minecraft_java_online(monitor).await
+		} else if monitor.minecraft_bedrock.is_some() {
+			is_minecraft_bedrock_online(monitor).await
+		} else {
+			Ok(CheckResult::from_latency(None))
+		};
 
 	let end_check_time = Utc::now();
 
-	let latency_ms = match &result {
-		Ok(Some(latency)) => round_to_3_decimals(*latency),
-		_ => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
-	};
-
 	match &result {
-		Ok(_) => {
+		Ok(check_result) => {
+			let latency_ms = match check_result.latency {
+				Some(latency) => round_to_3_decimals(latency),
+				None => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
+			};
+
 			if monitor.debug.unwrap_or(false) {
 				info!("Monitor '{}' succeed ({}ms)", monitor.name, latency_ms);
 			}
+
 			// Send heartbeat for every successful check
 			if let Err(e) = send_heartbeat(
 				monitor,
@@ -251,6 +270,7 @@ async fn run_single_check(
 				start_check_time,
 				end_check_time,
 				latency_ms,
+				check_result,
 			)
 			.await
 			{

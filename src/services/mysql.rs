@@ -2,11 +2,11 @@ use mysql_async::{Opts, OptsBuilder, Pool, prelude::Queryable};
 use std::error::Error;
 use tokio::time::Duration;
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
 pub async fn is_mysql_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let mysql = monitor
 		.mysql
 		.as_ref()
@@ -32,7 +32,7 @@ pub async fn is_mysql_online(
 	let ping_result = tokio::time::timeout(timeout, conn.query_drop("SELECT 1")).await;
 
 	match ping_result {
-		Ok(Ok(_)) => Ok(None),
+		Ok(Ok(_)) => Ok(CheckResult::from_latency(None)),
 		Ok(Err(e)) => Err(Box::new(e)),
 		Err(_) => Err("MySQL query timed out".into()),
 	}

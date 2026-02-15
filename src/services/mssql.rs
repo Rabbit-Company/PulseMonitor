@@ -1,4 +1,4 @@
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 use std::error::Error;
 use std::time::Duration;
 use tiberius::{Client, Config};
@@ -7,7 +7,7 @@ use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 pub async fn is_mssql_online(
 	monitor: &Monitor,
-) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let mssql = monitor
 		.mssql
 		.as_ref()
@@ -29,5 +29,5 @@ pub async fn is_mssql_online(
 
 	client.query("SELECT 1", &[]).await?;
 
-	Ok(None)
+	Ok(CheckResult::from_latency(None))
 }

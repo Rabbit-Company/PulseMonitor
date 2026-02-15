@@ -1,17 +1,17 @@
 # PulseMonitor
 
-A high-performance Rust monitoring agent that sends heartbeat pulses to uptime monitoring services. Supports HTTP, WebSocket, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, and Redis monitoring.
+A high-performance Rust monitoring agent that sends heartbeat pulses to uptime monitoring services. Supports HTTP, WebSocket, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, Minecraft Java and Minecraft Bedrock monitoring.
 
 ## Features
 
-| Feature                | Description                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| **Multi-Protocol**     | Monitor HTTP, WS, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis |
-| **Dual Mode**          | File-based config or centralized WebSocket management                         |
-| **Auto-Reconnect**     | Automatic 3-second delay reconnection on connection failure                   |
-| **Live Updates**       | Real-time configuration changes without restart (WebSocket mode)              |
-| **Template Variables** | Dynamic placeholders for latency, timestamps in heartbeat URLs                |
-| **Low Resource**       | Efficient Rust implementation with minimal overhead                           |
+| Feature                | Description                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Multi-Protocol**     | Monitor HTTP, WS, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, Minecraft Java/Bedrock |
+| **Dual Mode**          | File-based config or centralized WebSocket management                                                 |
+| **Auto-Reconnect**     | Automatic 1-second delay reconnection on connection failure                                           |
+| **Live Updates**       | Real-time configuration changes without restart (WebSocket mode)                                      |
+| **Template Variables** | Dynamic placeholders for latency, timestamps, and custom metrics in heartbeat URLs                    |
+| **Low Resource**       | Efficient Rust implementation with minimal overhead                                                   |
 
 ## Related Projects
 

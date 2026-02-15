@@ -76,6 +76,21 @@ Report successful monitor check:
 }
 ```
 
+Push message with custom metrics (e.g. from Minecraft monitors):
+
+```json
+{
+	"action": "push",
+	"token": "tk_mc_server_abc123",
+	"latency": 45.123,
+	"startTime": "2025-01-21T07:06:39.568Z",
+	"endTime": "2025-01-21T07:06:39.613Z",
+	"custom1": 12,
+	"custom2": null,
+	"custom3": null
+}
+```
+
 | Field       | Type   | Description                        |
 | ----------- | ------ | ---------------------------------- |
 | `action`    | string | Always `"push"`                    |
@@ -351,6 +366,32 @@ Each monitor has one service type:
 }
 ```
 
+**Minecraft Java:**
+
+```json
+{
+	"minecraft-java": {
+		"host": "mc.example.com",
+		"port": 25565,
+		"timeout": 3
+	}
+}
+```
+
+**Minecraft Bedrock:**
+
+```json
+{
+	"minecraft-bedrock": {
+		"host": "bedrock.example.com",
+		"port": 19132,
+		"timeout": 3
+	}
+}
+```
+
+> **Note:** Minecraft Java and Bedrock monitors populate `custom1` in push messages with the current online player count.
+
 ## Connection Management
 
 ### Reconnection Behavior
@@ -361,10 +402,10 @@ PulseMonitor automatically reconnects on:
 - Network errors
 - WebSocket protocol errors
 
-Reconnection delay: **3 seconds** (constant)
+Reconnection delay: **1 second** (constant)
 
 ```
-Connection lost → Wait 3s → Reconnect → Subscribe → Resume monitoring
+Connection lost → Wait 1s → Reconnect → Subscribe → Resume monitoring
 ```
 
 ### Heartbeat Delivery

@@ -2,9 +2,9 @@ use std::error::Error;
 use tokio::net::TcpStream;
 use tokio::time::{Duration, timeout};
 
-use crate::utils::Monitor;
+use crate::utils::{CheckResult, Monitor};
 
-pub async fn is_tcp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+pub async fn is_tcp_online(monitor: &Monitor) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let tcp = monitor
 		.tcp
 		.as_ref()
@@ -14,7 +14,7 @@ pub async fn is_tcp_online(monitor: &Monitor) -> Result<Option<f64>, Box<dyn Err
 	let timeout_duration = Duration::from_secs(tcp.timeout.unwrap_or(5));
 
 	match timeout(timeout_duration, TcpStream::connect(&addr)).await {
-		Ok(Ok(_stream)) => Ok(None),
+		Ok(Ok(_stream)) => Ok(CheckResult::from_latency(None)),
 		Ok(Err(e)) => Err(format!("Failed to connect to TCP server: {}", e).into()),
 		Err(_) => Err("TCP connection attempt timed out".into()),
 	}

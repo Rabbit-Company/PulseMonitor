@@ -15,6 +15,7 @@ mod services {
 	pub mod http;
 	pub mod icmp;
 	pub mod imap;
+	pub mod minecraft;
 	pub mod mssql;
 	pub mod mysql;
 	pub mod postgresql;
@@ -129,7 +130,8 @@ async fn main() {
 			EnvFilter::from_default_env()
 				.add_directive(Level::INFO.into())
 				.add_directive("tiberius=off".parse().unwrap())
-				.add_directive("tokio_util=off".parse().unwrap()),
+				.add_directive("tokio_util=off".parse().unwrap())
+				.add_directive("elytra_ping=off".parse().unwrap()),
 		)
 		.init();
 
