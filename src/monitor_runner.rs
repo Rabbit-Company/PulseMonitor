@@ -9,6 +9,7 @@ use crate::services::{
 	postgresql::is_postgresql_online,
 	redis::is_redis_online,
 	smtp::is_smtp_online,
+	snmp::is_snmp_online,
 	tcp::is_tcp_online,
 	udp::is_udp_online,
 	ws::is_ws_online,
@@ -56,6 +57,8 @@ fn get_service_type(monitor: &Monitor) -> &'static str {
 		"MC-Java"
 	} else if monitor.minecraft_bedrock.is_some() {
 		"MC-Bedrock"
+	} else if monitor.snmp.is_some() {
+		"SNMP"
 	} else {
 		"None"
 	}
@@ -245,6 +248,8 @@ async fn run_single_check(
 			is_minecraft_java_online(monitor).await
 		} else if monitor.minecraft_bedrock.is_some() {
 			is_minecraft_bedrock_online(monitor).await
+		} else if monitor.snmp.is_some() {
+			is_snmp_online(monitor).await
 		} else {
 			Ok(CheckResult::from_latency(None))
 		};

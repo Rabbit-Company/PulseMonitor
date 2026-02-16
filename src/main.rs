@@ -21,6 +21,7 @@ mod services {
 	pub mod postgresql;
 	pub mod redis;
 	pub mod smtp;
+	pub mod snmp;
 	pub mod tcp;
 	pub mod udp;
 	pub mod ws;

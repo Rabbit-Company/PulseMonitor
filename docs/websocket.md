@@ -366,6 +366,32 @@ Each monitor has one service type:
 }
 ```
 
+**SNMP:**
+
+```json
+{
+	"snmp": {
+		"host": "192.168.1.1",
+		"port": 161,
+		"timeout": 3,
+		"version": "3",
+		"community": "public",
+		"username": "snmpv3user",
+		"authPassword": "MyAuthPass",
+		"authProtocol": "sha256",
+		"privPassword": "MyPrivPass",
+		"privCipher": "aes128",
+		"securityLevel": "authPriv",
+		"oid": "1.3.6.1.2.1.1.3.0",
+		"custom1Oid": "1.3.6.1.4.1.2021.11.11.0",
+		"custom2Oid": "1.3.6.1.4.1.2021.4.6.0",
+		"custom3Oid": "1.3.6.1.4.1.2021.4.5.0"
+	}
+}
+```
+
+> **Note:** SNMP monitors populate `custom1`, `custom2`, and `custom3` in push messages with values from the configured OIDs.
+
 **Minecraft Java:**
 
 ```json

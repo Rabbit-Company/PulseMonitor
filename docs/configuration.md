@@ -203,6 +203,50 @@ url = "redis://username:password@localhost:6379/0"
 timeout = 3              # Seconds (default: 3)
 ```
 
+### SNMP Monitoring
+
+**SNMPv1:**
+
+```toml
+[monitors.snmp]
+host = "192.168.1.1"
+version = "1"
+community = "public"
+timeout = 3 # Seconds (default: 3)
+custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
+```
+
+**SNMPv2c:**
+
+```toml
+[monitors.snmp]
+host = "192.168.1.1"
+version = "2c"
+community = "public"
+timeout = 3 # Seconds (default: 3)
+custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
+```
+
+**SNMPv3 (authPriv):**
+
+```toml
+[monitors.snmp]
+host = "10.0.0.1"
+version = "3"
+username = "snmpv3user"
+authPassword = "MyAuthPass"
+authProtocol = "sha256"          # md5, sha1, sha224, sha256, sha384, sha512 (default: "sha256")
+privPassword = "MyPrivPass"
+privCipher = "aes128"            # des, aes128, aes192, aes256 (default: "aes128")
+securityLevel = "authPriv"       # noAuthNoPriv, authNoPriv, authPriv (default: "authPriv")
+timeout = 3                      # Seconds (default: 3)
+custom1Oid = "1.3.6.1.4.1.2021.11.11.0"   # {custom1}
+custom2Oid = "1.3.6.1.4.1.9.9.48.1.1.1.5.1" # {custom2}
+custom3Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006" # {custom3}
+```
+
+Populates `{custom1}`, `{custom2}`, and `{custom3}` with numeric values from the configured OIDs. OIDs must be in numeric dot-notation. See [SNMP](services.md#snmp) for details.
+
 ### Minecraft Java Monitoring
 
 ```toml
@@ -212,7 +256,7 @@ port = 25565             # Server port (default: 25565)
 timeout = 3              # Seconds (default: 3)
 ```
 
-Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Java](docs/services.md#minecraft-java) for details.
+Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Java](services.md#minecraft-java) for details.
 
 ### Minecraft Bedrock Monitoring
 
@@ -223,7 +267,7 @@ port = 19132             # Server port (default: 19132)
 timeout = 3              # Seconds (default: 3)
 ```
 
-Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Bedrock](docs/services.md#minecraft-bedrock) for details.
+Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Bedrock](services.md#minecraft-bedrock) for details.
 
 ## Complete Configuration Example
 

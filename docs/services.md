@@ -1,6 +1,6 @@
 # Service Monitors
 
-PulseMonitor supports 13 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
+PulseMonitor supports 14 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
 
 ## Overview
 
@@ -17,6 +17,7 @@ PulseMonitor supports 13 different service types. Each monitor checks a service'
 | [MSSQL](#mssql)                         | TDS              | 3s              |
 | [PostgreSQL](#postgresql)               | PostgreSQL       | 3s              |
 | [Redis](#redis)                         | RESP             | 3s              |
+| [SNMP](#snmp)                           | SNMP v1/v2c/v3   | 3s              |
 | [Minecraft Java](#minecraft-java)       | MC Java Protocol | 3s              |
 | [Minecraft Bedrock](#minecraft-bedrock) | MC Bedrock (UDP) | 3s              |
 
@@ -574,6 +575,164 @@ timeout = 3
 [monitors.redis]
 url = "redis://:cluster_password@redis-node-1.example.com:6379"
 timeout = 3
+```
+
+---
+
+## SNMP
+
+Monitor network devices via SNMP (Simple Network Management Protocol). Supports SNMPv1, SNMPv2c, and SNMPv3 with custom OID mapping to `{custom1}`, `{custom2}`, and `{custom3}` placeholders.
+
+### Configuration
+
+**SNMPv1/v2c:**
+
+```toml
+[monitors.snmp]
+host = "192.168.1.1"                                    # Required: Hostname or IP
+port = 161                                              # Optional: Port (default: 161)
+timeout = 3                                             # Optional: Seconds (default: 3)
+version = "2c"                                          # Optional: "1", "2c", or "3" (default: "3")
+community = "public"                                    # Optional: Community string (default: "public")
+oid = "1.3.6.1.2.1.1.3.0"                               # Optional: Primary OID (default: sysUpTime)
+custom1Oid = "1.3.6.1.4.1.2021.11.11.0"                 # Optional: OID -> {custom1}
+custom2Oid = "1.3.6.1.4.1.2021.4.6.0"                   # Optional: OID -> {custom2}
+custom3Oid = "1.3.6.1.4.1.2021.4.5.0"                   # Optional: OID -> {custom3}
+```
+
+**SNMPv3:**
+
+```toml
+[monitors.snmp]
+host = "10.0.0.1"                                       # Required: Hostname or IP
+port = 161                                              # Optional: Port (default: 161)
+timeout = 5                                             # Optional: Seconds (default: 3)
+version = "3"                                           # Optional: (default: "3")
+username = "snmpv3user"                                 # Required for v3: USM username
+authPassword = "MyAuthPass"                             # Required for v3: Auth password
+authProtocol = "sha256"                                 # Optional: Auth protocol (default: "sha256")
+privPassword = "MyPrivPass"                             # Required for authPriv: Privacy password
+privCipher = "aes128"                                   # Optional: Privacy cipher (default: "aes128")
+securityLevel = "authPriv"                              # Optional: Security level (default: "authPriv")
+oid = "1.3.6.1.2.1.1.3.0"                               # Optional: Primary OID (default: sysUpTime)
+custom1Oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.6.1"          # Optional: OID -> {custom1}
+custom2Oid = "1.3.6.1.4.1.9.9.48.1.1.1.5.1"             # Optional: OID -> {custom2}
+custom3Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"          # Optional: OID -> {custom3}
+```
+
+### Options
+
+| Option          | Type    | Default               | Applies to | Description                                    |
+| --------------- | ------- | --------------------- | ---------- | ---------------------------------------------- |
+| `host`          | string  | -                     | All        | Target hostname or IP address                  |
+| `port`          | integer | 161                   | All        | SNMP port                                      |
+| `timeout`       | integer | 3                     | All        | Response timeout in seconds                    |
+| `version`       | string  | `"3"`                 | All        | SNMP version: `1`, `2c`, or `3`                |
+| `community`     | string  | `"public"`            | v1, v2c    | Community string                               |
+| `username`      | string  | -                     | v3         | USM username                                   |
+| `authPassword`  | string  | -                     | v3         | Authentication password                        |
+| `authProtocol`  | string  | `"sha256"`            | v3         | md5, sha1, sha224, sha256, sha384, sha512      |
+| `privPassword`  | string  | -                     | v3         | Privacy password (required for authPriv)       |
+| `privCipher`    | string  | `"aes128"`            | v3         | des, aes128, aes192, aes256                    |
+| `securityLevel` | string  | `"authPriv"`          | v3         | noAuthNoPriv, authNoPriv, authPriv             |
+| `oid`           | string  | `"1.3.6.1.2.1.1.3.0"` | All        | Primary OID for availability check (sysUpTime) |
+| `custom1Oid`    | string  | -                     | All        | OID to query -> `{custom1}` placeholder        |
+| `custom2Oid`    | string  | -                     | All        | OID to query -> `{custom2}` placeholder        |
+| `custom3Oid`    | string  | -                     | All        | OID to query -> `{custom3}` placeholder        |
+
+### OID Format
+
+OIDs must be in numeric dot-notation (e.g., `1.3.6.1.2.1.1.3.0`). MIB names like `UCD-SNMP-MIB::ssCpuIdle.0` are not supported. Use `snmptranslate` to convert MIB names to numeric OIDs:
+
+```bash
+snmptranslate -On UCD-SNMP-MIB::ssCpuIdle.0
+# .1.3.6.1.4.1.2021.11.11.0
+```
+
+### Custom Metrics
+
+Numeric values from custom OIDs (Integer, Counter32, Counter64, Gauge32, Unsigned32, Timeticks) are automatically converted to `{custom1}`, `{custom2}`, and `{custom3}` placeholders. OctetString values are attempted to be parsed as numeric strings.
+
+### Success Criteria
+
+- SNMP session established
+- For v3: Engine discovery and authentication succeed
+- Primary OID GET returns a valid response
+
+### Examples
+
+**SNMPv1 — Legacy device:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Legacy Switch"
+interval = 60
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}"
+
+[monitors.snmp]
+host = "192.168.1.1"
+version = "1"
+community = "public"
+```
+
+**SNMPv2c — Router with CPU and memory monitoring:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Core Router"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&cpu={custom1}&mem={custom2}"
+
+[monitors.snmp]
+host = "10.0.0.1"
+version = "2c"
+community = "monitoring"
+custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
+custom2Oid = "1.3.6.1.4.1.2021.4.6.0"
+```
+
+**SNMPv3 — Secure switch with authPriv:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Secure Switch"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&temp={custom1}"
+
+[monitors.snmp]
+host = "10.0.0.1"
+version = "3"
+username = "snmpv3user"
+authPassword = "MyAuthPass"
+authProtocol = "sha256"
+privPassword = "MyPrivPass"
+privCipher = "aes128"
+securityLevel = "authPriv"
+custom1Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"
+```
+
+**SNMPv3 — authNoPriv (no encryption):**
+
+```toml
+[monitors.snmp]
+host = "192.168.1.1"
+version = "3"
+username = "monitor_user"
+authPassword = "authPass123"
+authProtocol = "sha1"
+securityLevel = "authNoPriv"
 ```
 
 ---

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.13.0";
+pub const VERSION: &str = "v3.14.0";
 
 #[derive(Default, Debug, Clone)]
 pub struct CheckResult {
@@ -77,6 +77,7 @@ pub struct Monitor {
 	pub minecraft_java: Option<MinecraftJavaConfig>,
 	#[serde(rename = "minecraft-bedrock")]
 	pub minecraft_bedrock: Option<MinecraftBedrockConfig>,
+	pub snmp: Option<SnmpConfig>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -187,6 +188,38 @@ pub struct MinecraftBedrockConfig {
 	pub host: String,
 	pub port: Option<u16>,
 	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnmpConfig {
+	pub host: String,
+	pub port: Option<u16>,
+	pub timeout: Option<u64>,
+	/// SNMP version: "1", "2c", or "3" (default: "3")
+	pub version: Option<String>,
+	/// Community string for v1/v2c (default: "public")
+	pub community: Option<String>,
+	/// SNMPv3 USM username
+	pub username: Option<String>,
+	/// SNMPv3 authentication password
+	pub auth_password: Option<String>,
+	/// SNMPv3 auth protocol: md5, sha1, sha256, etc. (default: "sha256")
+	pub auth_protocol: Option<String>,
+	/// SNMPv3 privacy password (required for authPriv)
+	pub priv_password: Option<String>,
+	/// SNMPv3 privacy cipher: des, aes128, aes192, aes256 (default: "aes128")
+	pub priv_cipher: Option<String>,
+	/// SNMPv3 security level: noAuthNoPriv, authNoPriv, authPriv (default: "authPriv")
+	pub security_level: Option<String>,
+	/// Primary OID for availability check (default: sysUpTime 1.3.6.1.2.1.1.3.0)
+	pub oid: Option<String>,
+	/// OID to query {custom1}
+	pub custom1_oid: Option<String>,
+	/// OID to query {custom2}
+	pub custom2_oid: Option<String>,
+	/// OID to query {custom3}
+	pub custom3_oid: Option<String>,
 }
 
 // WebSocket Protocol Messages

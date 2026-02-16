@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.13.0"
+version = "3.14.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2024"
@@ -84,6 +84,9 @@ tiberius = { version = "0.12", default-features = false, features = [
 
 # Minecraft
 elytra-ping = { version = "5.1" }
+
+# SNMP
+snmp2 = { version = "0.4", features = ["v3", "tokio"] }
 
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 chrono = "0.4"
