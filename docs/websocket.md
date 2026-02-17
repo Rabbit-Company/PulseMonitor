@@ -245,7 +245,11 @@ Each monitor has one service type:
 		"method": "GET",
 		"url": "https://example.com",
 		"timeout": 10,
-		"headers": []
+		"headers": [],
+		"jsonPaths": {
+			"custom1": "metrics.cpu",
+			"custom2": "metrics.memory"
+		}
 	}
 }
 ```
@@ -383,14 +387,14 @@ Each monitor has one service type:
 		"privCipher": "aes128",
 		"securityLevel": "authPriv",
 		"oid": "1.3.6.1.2.1.1.3.0",
-		"custom1Oid": "1.3.6.1.4.1.2021.11.11.0",
-		"custom2Oid": "1.3.6.1.4.1.2021.4.6.0",
-		"custom3Oid": "1.3.6.1.4.1.2021.4.5.0"
+		"oids": {
+			"custom1": "1.3.6.1.4.1.2021.11.11.0",
+			"custom2": "1.3.6.1.4.1.2021.4.6.0",
+			"cpuIdle": "1.3.6.1.4.1.2021.11.11.0"
+		}
 	}
 }
 ```
-
-> **Note:** SNMP monitors populate `custom1`, `custom2`, and `custom3` in push messages with values from the configured OIDs.
 
 **Minecraft Java:**
 

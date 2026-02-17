@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::time::Duration;
 
@@ -72,31 +73,29 @@ fn parse_priv_cipher(cipher: &str) -> Result<v3::Cipher, Box<dyn Error + Send + 
 	}
 }
 
-/// Query custom OIDs and populate custom1/custom2/custom3 values.
-fn query_custom_oids(
+/// Query named OIDs and populate values in the CheckResult.
+fn query_named_oids(
 	session: &mut SyncSession,
-	custom1_oid: &Option<String>,
-	custom2_oid: &Option<String>,
-	custom3_oid: &Option<String>,
-) -> (Option<f64>, Option<f64>, Option<f64>) {
-	let mut custom1: Option<f64> = None;
-	let mut custom2: Option<f64> = None;
-	let mut custom3: Option<f64> = None;
+	oids: &HashMap<String, String>,
+	result: &mut CheckResult,
+) {
+	for (name, oid_str) in oids {
+		let oid = match parse_oid(oid_str) {
+			Ok(o) => o,
+			Err(e) => {
+				error!(
+					"SNMP: failed to parse OID '{}' for '{}': {}",
+					oid_str, name, e
+				);
+				continue;
+			}
+		};
 
-	let custom_oids: Vec<(Oid<'static>, usize)> = [
-		(custom1_oid.as_deref(), 1usize),
-		(custom2_oid.as_deref(), 2usize),
-		(custom3_oid.as_deref(), 3usize),
-	]
-	.iter()
-	.filter_map(|(oid_opt, idx)| oid_opt.and_then(|s| parse_oid(s).ok()).map(|o| (o, *idx)))
-	.collect();
+		debug!("SNMP: querying '{}' OID '{}'", name, oid_str);
 
-	for (custom_oid, idx) in &custom_oids {
-		debug!("SNMP: querying custom{} OID", idx);
 		let mut retries = 3;
 		let value = loop {
-			match session.get(custom_oid) {
+			match session.get(&oid) {
 				Ok(response) => {
 					break response
 						.varbinds
@@ -109,21 +108,19 @@ fn query_custom_oids(
 					continue;
 				}
 				Err(e) => {
-					error!("SNMP: custom{} OID query failed: {}", idx, e);
+					error!("SNMP: '{}' OID query failed: {}", name, e);
 					break None;
 				}
 			}
 		};
 
-		match idx {
-			1 => custom1 = value,
-			2 => custom2 = value,
-			3 => custom3 = value,
-			_ => {}
+		if let Some(v) = value {
+			debug!("SNMP: '{}' = {}", name, v);
+			result.set(name, v);
+		} else {
+			debug!("SNMP: '{}' returned no numeric value", name);
 		}
 	}
-
-	(custom1, custom2, custom3)
 }
 
 /// Format the SNMP target address, handling IPv6 correctly.
@@ -166,9 +163,7 @@ fn run_snmp_v1(
 	timeout: Duration,
 	community: &[u8],
 	oid_str: &str,
-	custom1_oid: &Option<String>,
-	custom2_oid: &Option<String>,
-	custom3_oid: &Option<String>,
+	oids: &HashMap<String, String>,
 ) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	debug!("SNMP: creating v1 session to {}", addr);
 
@@ -180,20 +175,12 @@ fn run_snmp_v1(
 	let primary_oid = parse_oid(oid_str)?;
 	snmp_get_with_retry(&mut session, &primary_oid, oid_str)?;
 
-	let (custom1, custom2, custom3) =
-		query_custom_oids(&mut session, custom1_oid, custom2_oid, custom3_oid);
+	let mut result = CheckResult::new();
+	query_named_oids(&mut session, oids, &mut result);
 
-	debug!(
-		"SNMP v1: done. custom1={:?}, custom2={:?}, custom3={:?}",
-		custom1, custom2, custom3
-	);
+	debug!("SNMP v1: done. values={:?}", result.values);
 
-	Ok(CheckResult {
-		latency: None,
-		custom1,
-		custom2,
-		custom3,
-	})
+	Ok(result)
 }
 
 /// Run SNMPv2c check.
@@ -202,9 +189,7 @@ fn run_snmp_v2c(
 	timeout: Duration,
 	community: &[u8],
 	oid_str: &str,
-	custom1_oid: &Option<String>,
-	custom2_oid: &Option<String>,
-	custom3_oid: &Option<String>,
+	oids: &HashMap<String, String>,
 ) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	debug!("SNMP: creating v2c session to {}", addr);
 
@@ -216,20 +201,12 @@ fn run_snmp_v2c(
 	let primary_oid = parse_oid(oid_str)?;
 	snmp_get_with_retry(&mut session, &primary_oid, oid_str)?;
 
-	let (custom1, custom2, custom3) =
-		query_custom_oids(&mut session, custom1_oid, custom2_oid, custom3_oid);
+	let mut result = CheckResult::new();
+	query_named_oids(&mut session, oids, &mut result);
 
-	debug!(
-		"SNMP v2c: done. custom1={:?}, custom2={:?}, custom3={:?}",
-		custom1, custom2, custom3
-	);
+	debug!("SNMP v2c: done. values={:?}", result.values);
 
-	Ok(CheckResult {
-		latency: None,
-		custom1,
-		custom2,
-		custom3,
-	})
+	Ok(result)
 }
 
 /// Run SNMPv3 check.
@@ -243,9 +220,7 @@ fn run_snmp_v3(
 	priv_password: Option<String>,
 	priv_cipher: &str,
 	oid_str: &str,
-	custom1_oid: &Option<String>,
-	custom2_oid: &Option<String>,
-	custom3_oid: &Option<String>,
+	oids: &HashMap<String, String>,
 ) -> Result<CheckResult, Box<dyn Error + Send + Sync>> {
 	let auth_proto = parse_auth_protocol(auth_protocol)?;
 
@@ -305,20 +280,12 @@ fn run_snmp_v3(
 	let primary_oid = parse_oid(oid_str)?;
 	snmp_get_with_retry(&mut session, &primary_oid, oid_str)?;
 
-	let (custom1, custom2, custom3) =
-		query_custom_oids(&mut session, custom1_oid, custom2_oid, custom3_oid);
+	let mut result = CheckResult::new();
+	query_named_oids(&mut session, oids, &mut result);
 
-	debug!(
-		"SNMP v3: done. custom1={:?}, custom2={:?}, custom3={:?}",
-		custom1, custom2, custom3
-	);
+	debug!("SNMP v3: done. values={:?}", result.values);
 
-	Ok(CheckResult {
-		latency: None,
-		custom1,
-		custom2,
-		custom3,
-	})
+	Ok(result)
 }
 
 pub async fn is_snmp_online(
@@ -356,13 +323,12 @@ pub async fn is_snmp_online(
 		.oid
 		.clone()
 		.unwrap_or_else(|| "1.3.6.1.2.1.1.3.0".to_string());
-	let custom1_oid = snmp.custom1_oid.clone();
-	let custom2_oid = snmp.custom2_oid.clone();
-	let custom3_oid = snmp.custom3_oid.clone();
+
+	let oids: HashMap<String, String> = snmp.oids.clone().unwrap_or_default();
 
 	debug!(
-		"SNMP: connecting to {}:{} version={}, user='{}'",
-		host, port, version, username
+		"SNMP: connecting to {}:{} version={}, user='{}', oids={:?}",
+		host, port, version, username, oids
 	);
 
 	tokio::task::spawn_blocking(move || {
@@ -370,24 +336,8 @@ pub async fn is_snmp_online(
 		let timeout = Duration::from_secs(timeout_secs);
 
 		match version.as_str() {
-			"1" | "v1" => run_snmp_v1(
-				&addr,
-				timeout,
-				community.as_bytes(),
-				&oid,
-				&custom1_oid,
-				&custom2_oid,
-				&custom3_oid,
-			),
-			"2" | "2c" | "v2" | "v2c" => run_snmp_v2c(
-				&addr,
-				timeout,
-				community.as_bytes(),
-				&oid,
-				&custom1_oid,
-				&custom2_oid,
-				&custom3_oid,
-			),
+			"1" | "v1" => run_snmp_v1(&addr, timeout, community.as_bytes(), &oid, &oids),
+			"2" | "2c" | "v2" | "v2c" => run_snmp_v2c(&addr, timeout, community.as_bytes(), &oid, &oids),
 			"3" | "v3" => run_snmp_v3(
 				&addr,
 				timeout,
@@ -398,9 +348,7 @@ pub async fn is_snmp_online(
 				priv_password,
 				&priv_cipher,
 				&oid,
-				&custom1_oid,
-				&custom2_oid,
-				&custom3_oid,
+				&oids,
 			),
 			_ => Err(
 				format!(

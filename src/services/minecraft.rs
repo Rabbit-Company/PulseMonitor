@@ -18,12 +18,14 @@ pub async fn is_minecraft_java_online(
 		|e| -> Box<dyn Error + Send + Sync> { format!("Minecraft Java ping failed: {}", e).into() },
 	)?;
 
-	Ok(CheckResult {
-		latency: Some(latency.as_secs_f64() * 1000.0),
-		custom1: info.players.map(|p| p.online as f64),
-		custom2: None,
-		custom3: None,
-	})
+	let mut result = CheckResult::new();
+	result.set("latency", latency.as_secs_f64() * 1000.0);
+	if let Some(players) = info.players {
+		result.set("custom1", players.online as f64);
+		result.set("playerCount", players.online as f64);
+	}
+
+	Ok(result)
 }
 
 pub async fn is_minecraft_bedrock_online(
@@ -41,10 +43,10 @@ pub async fn is_minecraft_bedrock_online(
 		|e| -> Box<dyn Error + Send + Sync> { format!("Minecraft Bedrock ping failed: {}", e).into() },
 	)?;
 
-	Ok(CheckResult {
-		latency: Some(latency.as_secs_f64() * 1000.0),
-		custom1: Some(info.online_players as f64),
-		custom2: None,
-		custom3: None,
-	})
+	let mut result = CheckResult::new();
+	result.set("latency", latency.as_secs_f64() * 1000.0);
+	result.set("custom1", info.online_players as f64);
+	result.set("playerCount", info.online_players as f64);
+
+	Ok(result)
 }

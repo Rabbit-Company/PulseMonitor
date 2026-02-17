@@ -31,12 +31,7 @@ pub async fn is_icmp_online(
 
 				if parts.len() >= 2 {
 					if let Ok(avg) = parts[1].parse::<f64>() {
-						return Ok(CheckResult {
-							latency: Some(avg),
-							custom1: None,
-							custom2: None,
-							custom3: None,
-						});
+						return Ok(CheckResult::from_latency(Some(avg)));
 					}
 				}
 			}

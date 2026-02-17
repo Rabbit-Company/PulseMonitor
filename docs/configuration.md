@@ -213,7 +213,9 @@ host = "192.168.1.1"
 version = "1"
 community = "public"
 timeout = 3 # Seconds (default: 3)
-custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"
 ```
 
 **SNMPv2c:**
@@ -224,7 +226,9 @@ host = "192.168.1.1"
 version = "2c"
 community = "public"
 timeout = 3 # Seconds (default: 3)
-custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"
 ```
 
 **SNMPv3 (authPriv):**
@@ -240,9 +244,11 @@ privPassword = "MyPrivPass"
 privCipher = "aes128"            # des, aes128, aes192, aes256 (default: "aes128")
 securityLevel = "authPriv"       # noAuthNoPriv, authNoPriv, authPriv (default: "authPriv")
 timeout = 3                      # Seconds (default: 3)
-custom1Oid = "1.3.6.1.4.1.2021.11.11.0"   # {custom1}
-custom2Oid = "1.3.6.1.4.1.9.9.48.1.1.1.5.1" # {custom2}
-custom3Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006" # {custom3}
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"   # {custom1}
+custom2 = "1.3.6.1.4.1.9.9.48.1.1.1.5.1" # {custom2}
+custom3 = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006" # {custom3}
 ```
 
 Populates `{custom1}`, `{custom2}`, and `{custom3}` with numeric values from the configured OIDs. OIDs must be in numeric dot-notation. See [SNMP](services.md#snmp) for details.

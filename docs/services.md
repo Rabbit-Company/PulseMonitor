@@ -40,16 +40,38 @@ headers = [                                 # Optional: Custom headers
 
 ### Options
 
-| Option    | Type    | Default | Description                   |
-| --------- | ------- | ------- | ----------------------------- |
-| `method`  | string  | -       | HTTP method (GET, POST, HEAD) |
-| `url`     | string  | -       | Full URL including protocol   |
-| `timeout` | integer | 10      | Request timeout in seconds    |
-| `headers` | array   | -       | Custom request headers        |
+| Option      | Type    | Default | Description                                               |
+| ----------- | ------- | ------- | --------------------------------------------------------- |
+| `method`    | string  | -       | HTTP method (GET, POST, HEAD)                             |
+| `url`       | string  | -       | Full URL including protocol                               |
+| `timeout`   | integer | 10      | Request timeout in seconds                                |
+| `headers`   | array   | -       | Custom request headers                                    |
+| `jsonPaths` | object  | -       | Map of placeholder name -> JSON path for value extraction |
 
 ### Success Criteria
 
 - HTTP response status code is 2xx (200-299)
+
+### Custom Metrics
+
+Extract numeric values from JSON responses using dot-notation paths. Each entry in
+`jsonPaths` maps a placeholder name to a JSON path. Values are available as
+`{name}` placeholders in heartbeat URLs and headers.
+
+**Path syntax:**
+
+- Object keys separated by dots: `cryptocurrencies.BTC`
+- Array indices in brackets: `system.cpu.[0].percentage`
+- Mixed nesting: `data.[2].results.[0].value`
+
+Numeric JSON values (integers and floats) are used directly. String values are
+attempted to be parsed as numbers. Non-numeric values are silently ignored.
+
+Entries named `custom1`, `custom2`, or `custom3` also populate the corresponding
+fields in WebSocket push messages for UptimeMonitor-Server compatibility.
+
+> **Note:** The response body is only parsed when `jsonPaths` is configured.
+> HEAD requests do not return a body, so JSON paths cannot be used with HEAD.
 
 ### Examples
 
@@ -72,6 +94,54 @@ headers = [
   { "Authorization" = "Bearer eyJhbGc..." },
   { "Content-Type" = "application/json" }
 ]
+```
+
+**API with JSON metric extraction:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Crypto API"
+interval = 60
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&usd={custom1}&eur={custom2}"
+
+[monitors.http]
+method = "GET"
+url = "https://forex.rabbitmonitor.com/v1/crypto/rates/BTC"
+timeout = 10
+
+[monitors.http.jsonPaths]
+custom1 = "rates.USD"
+custom2 = "rates.EUR"
+```
+
+**Server metrics with array access:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Server Health"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&cpu={custom1}&mem={custom2}&disk={custom3}"
+
+[monitors.http]
+method = "GET"
+url = "https://server.example.com/api/health"
+timeout = 10
+headers = [
+  { "Authorization" = "Bearer TOKEN" }
+]
+
+[monitors.http.jsonPaths]
+custom1 = "system.cpu.[0].percentage"
+custom2 = "system.memory.usedPercent"
+custom3 = "system.disks.[0].usedPercent"
 ```
 
 ---
@@ -595,9 +665,13 @@ timeout = 3                                             # Optional: Seconds (def
 version = "2c"                                          # Optional: "1", "2c", or "3" (default: "3")
 community = "public"                                    # Optional: Community string (default: "public")
 oid = "1.3.6.1.2.1.1.3.0"                               # Optional: Primary OID (default: sysUpTime)
-custom1Oid = "1.3.6.1.4.1.2021.11.11.0"                 # Optional: OID -> {custom1}
-custom2Oid = "1.3.6.1.4.1.2021.4.6.0"                   # Optional: OID -> {custom2}
-custom3Oid = "1.3.6.1.4.1.2021.4.5.0"                   # Optional: OID -> {custom3}
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"
+custom2 = "1.3.6.1.4.1.2021.4.6.0"
+cpuIdle = "1.3.6.1.4.1.2021.11.11.0"
+temperature = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"
+diskUsage = "1.3.6.1.4.1.2021.9.1.9.1"
 ```
 
 **SNMPv3:**
@@ -615,30 +689,32 @@ privPassword = "MyPrivPass"                             # Required for authPriv:
 privCipher = "aes128"                                   # Optional: Privacy cipher (default: "aes128")
 securityLevel = "authPriv"                              # Optional: Security level (default: "authPriv")
 oid = "1.3.6.1.2.1.1.3.0"                               # Optional: Primary OID (default: sysUpTime)
-custom1Oid = "1.3.6.1.4.1.9.9.109.1.1.1.1.6.1"          # Optional: OID -> {custom1}
-custom2Oid = "1.3.6.1.4.1.9.9.48.1.1.1.5.1"             # Optional: OID -> {custom2}
-custom3Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"          # Optional: OID -> {custom3}
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"
+custom2 = "1.3.6.1.4.1.2021.4.6.0"
+cpuIdle = "1.3.6.1.4.1.2021.11.11.0"
+temperature = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"
+diskUsage = "1.3.6.1.4.1.2021.9.1.9.1"
 ```
 
 ### Options
 
-| Option          | Type    | Default               | Applies to | Description                                    |
-| --------------- | ------- | --------------------- | ---------- | ---------------------------------------------- |
-| `host`          | string  | -                     | All        | Target hostname or IP address                  |
-| `port`          | integer | 161                   | All        | SNMP port                                      |
-| `timeout`       | integer | 3                     | All        | Response timeout in seconds                    |
-| `version`       | string  | `"3"`                 | All        | SNMP version: `1`, `2c`, or `3`                |
-| `community`     | string  | `"public"`            | v1, v2c    | Community string                               |
-| `username`      | string  | -                     | v3         | USM username                                   |
-| `authPassword`  | string  | -                     | v3         | Authentication password                        |
-| `authProtocol`  | string  | `"sha256"`            | v3         | md5, sha1, sha224, sha256, sha384, sha512      |
-| `privPassword`  | string  | -                     | v3         | Privacy password (required for authPriv)       |
-| `privCipher`    | string  | `"aes128"`            | v3         | des, aes128, aes192, aes256                    |
-| `securityLevel` | string  | `"authPriv"`          | v3         | noAuthNoPriv, authNoPriv, authPriv             |
-| `oid`           | string  | `"1.3.6.1.2.1.1.3.0"` | All        | Primary OID for availability check (sysUpTime) |
-| `custom1Oid`    | string  | -                     | All        | OID to query -> `{custom1}` placeholder        |
-| `custom2Oid`    | string  | -                     | All        | OID to query -> `{custom2}` placeholder        |
-| `custom3Oid`    | string  | -                     | All        | OID to query -> `{custom3}` placeholder        |
+| Option          | Type    | Default               | Applies to | Description                                        |
+| --------------- | ------- | --------------------- | ---------- | -------------------------------------------------- |
+| `host`          | string  | -                     | All        | Target hostname or IP address                      |
+| `port`          | integer | 161                   | All        | SNMP port                                          |
+| `timeout`       | integer | 3                     | All        | Response timeout in seconds                        |
+| `version`       | string  | `"3"`                 | All        | SNMP version: `1`, `2c`, or `3`                    |
+| `community`     | string  | `"public"`            | v1, v2c    | Community string                                   |
+| `username`      | string  | -                     | v3         | USM username                                       |
+| `authPassword`  | string  | -                     | v3         | Authentication password                            |
+| `authProtocol`  | string  | `"sha256"`            | v3         | md5, sha1, sha224, sha256, sha384, sha512          |
+| `privPassword`  | string  | -                     | v3         | Privacy password (required for authPriv)           |
+| `privCipher`    | string  | `"aes128"`            | v3         | des, aes128, aes192, aes256                        |
+| `securityLevel` | string  | `"authPriv"`          | v3         | noAuthNoPriv, authNoPriv, authPriv                 |
+| `oid`           | string  | `"1.3.6.1.2.1.1.3.0"` | All        | Primary OID for availability check (sysUpTime)     |
+| `oids`          | object  | -                     | All        | Map of placeholder name -> OID for querying values |
 
 ### OID Format
 
@@ -651,7 +727,13 @@ snmptranslate -On UCD-SNMP-MIB::ssCpuIdle.0
 
 ### Custom Metrics
 
-Numeric values from custom OIDs (Integer, Counter32, Counter64, Gauge32, Unsigned32, Timeticks) are automatically converted to `{custom1}`, `{custom2}`, and `{custom3}` placeholders. OctetString values are attempted to be parsed as numeric strings.
+Map OIDs to named placeholders using the `oids` table. Each entry maps a placeholder
+name to an OID. Numeric SNMP values (Integer, Counter32, Counter64, Gauge32,
+Unsigned32, Timeticks) are converted to `f64`. OctetString values are attempted to
+be parsed as numeric strings.
+
+Entries named `custom1`, `custom2`, or `custom3` also populate the corresponding
+fields in WebSocket push messages for UptimeMonitor-Server compatibility.
 
 ### Success Criteria
 
@@ -695,8 +777,10 @@ url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&cpu={custom1}
 host = "10.0.0.1"
 version = "2c"
 community = "monitoring"
-custom1Oid = "1.3.6.1.4.1.2021.11.11.0"
-custom2Oid = "1.3.6.1.4.1.2021.4.6.0"
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.2021.11.11.0"
+custom2 = "1.3.6.1.4.1.2021.4.6.0"
 ```
 
 **SNMPv3 — Secure switch with authPriv:**
@@ -720,7 +804,9 @@ authProtocol = "sha256"
 privPassword = "MyPrivPass"
 privCipher = "aes128"
 securityLevel = "authPriv"
-custom1Oid = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"
+
+[monitors.snmp.oids]
+custom1 = "1.3.6.1.4.1.9.9.13.1.3.1.3.1006"
 ```
 
 **SNMPv3 — authNoPriv (no encryption):**

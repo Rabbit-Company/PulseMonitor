@@ -25,7 +25,7 @@ fn apply_templates(
 	end_time_iso: &str,
 	start_time_unix: &str,
 	end_time_unix: &str,
-	custom_placeholders: &[(&str, String)],
+	custom_placeholders: &[(String, String)],
 ) -> String {
 	let mut result = template
 		.replace("{latency}", latency_str)
@@ -47,7 +47,7 @@ pub async fn send_heartbeat_with_config(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
-	custom_placeholders: &[(&str, String)],
+	custom_placeholders: &[(String, String)],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder()
 		.timeout(Duration::from_secs(heartbeat.timeout.unwrap_or(10)))
@@ -109,7 +109,7 @@ pub async fn send_heartbeat_with_token_http(
 	start_check_time: DateTime<Utc>,
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
-	custom_placeholders: &[(&str, String)],
+	custom_placeholders: &[(String, String)],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
 	let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
 
@@ -157,11 +157,7 @@ pub async fn send_heartbeat_via_websocket(
 		Some(start_time_iso),
 		Some(end_time_iso),
 	)
-	.with_custom_metrics(
-		check_result.custom1,
-		check_result.custom2,
-		check_result.custom3,
-	);
+	.with_custom_metrics(check_result);
 
 	// Get the sender and send the message
 	let sender_guard = pulse_sender.read().await;

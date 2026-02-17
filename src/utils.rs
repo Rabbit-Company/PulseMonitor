@@ -6,40 +6,67 @@ pub const VERSION: &str = "v3.14.0";
 
 #[derive(Default, Debug, Clone)]
 pub struct CheckResult {
-	pub latency: Option<f64>,
-	pub custom1: Option<f64>,
-	pub custom2: Option<f64>,
-	pub custom3: Option<f64>,
+	pub values: HashMap<String, f64>,
 }
 
 impl CheckResult {
-	pub fn from_latency(latency: Option<f64>) -> Self {
+	pub fn new() -> Self {
 		CheckResult {
-			latency,
-			custom1: None,
-			custom2: None,
-			custom3: None,
+			values: HashMap::new(),
 		}
+	}
+
+	pub fn from_latency(latency: Option<f64>) -> Self {
+		let mut values = HashMap::new();
+		if let Some(l) = latency {
+			values.insert("latency".to_string(), l);
+		}
+		CheckResult { values }
+	}
+
+	pub fn latency(&self) -> Option<f64> {
+		self.values.get("latency").copied()
+	}
+
+	pub fn set(&mut self, key: impl Into<String>, value: f64) {
+		self.values.insert(key.into(), value);
+	}
+
+	pub fn get(&self, key: &str) -> Option<f64> {
+		self.values.get(key).copied()
 	}
 }
 
 pub fn resolve_custom_placeholders(
 	monitor: &Monitor,
 	result: &CheckResult,
-) -> Vec<(&'static str, String)> {
+) -> Vec<(String, String)> {
 	let mut placeholders = Vec::new();
 
-	let custom1_str = result.custom1.map(|v| v.to_string()).unwrap_or_default();
-	let custom2_str = result.custom2.map(|v| v.to_string()).unwrap_or_default();
-	let custom3_str = result.custom3.map(|v| v.to_string()).unwrap_or_default();
+	// Always emit {custom1}, {custom2}, {custom3} (empty string if absent)
+	for key in &["custom1", "custom2", "custom3"] {
+		let value_str = result.get(key).map(|v| v.to_string()).unwrap_or_default();
+		placeholders.push((format!("{{{}}}", key), value_str));
+	}
 
-	placeholders.push(("{custom1}", custom1_str.clone()));
-	placeholders.push(("{custom2}", custom2_str.clone()));
-	placeholders.push(("{custom3}", custom3_str.clone()));
-
+	// Minecraft alias
 	if monitor.minecraft_java.is_some() || monitor.minecraft_bedrock.is_some() {
-		// Minecraft: custom1 = player count
-		placeholders.push(("{playerCount}", custom1_str));
+		let player_count = result
+			.get("playerCount")
+			.or_else(|| result.get("custom1"))
+			.map(|v| v.to_string())
+			.unwrap_or_default();
+		placeholders.push(("{playerCount}".to_string(), player_count));
+	}
+
+	// Emit all other arbitrary keys from the result
+	for (key, value) in &result.values {
+		match key.as_str() {
+			"latency" | "custom1" | "custom2" | "custom3" | "playerCount" => continue,
+			_ => {
+				placeholders.push((format!("{{{}}}", key), value.to_string()));
+			}
+		}
 	}
 
 	placeholders
@@ -125,6 +152,7 @@ pub struct HttpConfig {
 	pub url: String,
 	pub timeout: Option<u64>,
 	pub headers: Option<Vec<HashMap<String, String>>>,
+	pub json_paths: Option<HashMap<String, String>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -214,12 +242,8 @@ pub struct SnmpConfig {
 	pub security_level: Option<String>,
 	/// Primary OID for availability check (default: sysUpTime 1.3.6.1.2.1.1.3.0)
 	pub oid: Option<String>,
-	/// OID to query {custom1}
-	pub custom1_oid: Option<String>,
-	/// OID to query {custom2}
-	pub custom2_oid: Option<String>,
-	/// OID to query {custom3}
-	pub custom3_oid: Option<String>,
+	/// Map of placeholder name -> OID for querying custom values
+	pub oids: Option<HashMap<String, String>>,
 }
 
 // WebSocket Protocol Messages
@@ -270,16 +294,10 @@ impl PushMessage {
 		}
 	}
 
-	#[allow(dead_code)]
-	pub fn with_custom_metrics(
-		mut self,
-		custom1: Option<f64>,
-		custom2: Option<f64>,
-		custom3: Option<f64>,
-	) -> Self {
-		self.custom1 = custom1;
-		self.custom2 = custom2;
-		self.custom3 = custom3;
+	pub fn with_custom_metrics(mut self, result: &CheckResult) -> Self {
+		self.custom1 = result.get("custom1");
+		self.custom2 = result.get("custom2");
+		self.custom3 = result.get("custom3");
 		self
 	}
 }

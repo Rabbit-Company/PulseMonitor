@@ -258,7 +258,7 @@ async fn run_single_check(
 
 	match &result {
 		Ok(check_result) => {
-			let latency_ms = match check_result.latency {
+			let latency_ms = match check_result.latency() {
 				Some(latency) => round_to_3_decimals(latency),
 				None => round_to_3_decimals(start_time.elapsed().as_secs_f64() * 1000.0),
 			};
