@@ -395,6 +395,14 @@ Each pulse is assigned a unique `pulseId` and tracked individually. The server a
 
 With default settings, a pulse will be retried for up to 5 minutes (300 retries × 1s delay) before being dropped. The queue holds up to 10,000 unacknowledged pulses across all monitors.
 
+### Performance Tuning
+
+| Variable                      | Description                                   | Default |
+| ----------------------------- | --------------------------------------------- | ------- |
+| `PULSE_MAX_CONCURRENT_CHECKS` | Maximum number of simultaneous service checks | `5000`  |
+
+This setting limits how many monitor checks can run concurrently, preventing resource exhaustion (file descriptors, CPU, network). Increase if you have many monitors and ample system resources; decrease if you experience resource constraints.
+
 ## Configuration Priority
 
 1. **Environment variables** (`PULSE_SERVER_URL` + `PULSE_TOKEN`) → WebSocket mode

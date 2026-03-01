@@ -231,6 +231,7 @@ impl WsClient {
 
 				let config = Config {
 					monitors: data.monitors,
+					max_concurrent_checks: None,
 				};
 
 				if let Err(e) = config_tx.send(config).await {
@@ -255,6 +256,7 @@ impl WsClient {
 
 				let config = Config {
 					monitors: data.monitors,
+					max_concurrent_checks: None,
 				};
 
 				if let Err(e) = config_tx.send(config).await {

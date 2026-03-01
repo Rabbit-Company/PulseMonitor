@@ -25,7 +25,7 @@ fn http_client() -> &'static Client {
 	CLIENT.get_or_init(|| {
 		Client::builder()
 			.timeout(Duration::from_secs(10))
-			.pool_max_idle_per_host(64)
+			.pool_max_idle_per_host(256)
 			.build()
 			.expect("Failed to build HTTP client")
 	})

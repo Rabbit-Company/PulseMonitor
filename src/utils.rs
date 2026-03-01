@@ -76,6 +76,7 @@ pub fn resolve_custom_placeholders(
 #[serde(rename_all = "camelCase")]
 pub struct Config {
 	pub monitors: Vec<Monitor>,
+	pub max_concurrent_checks: Option<usize>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

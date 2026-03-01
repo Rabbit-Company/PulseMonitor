@@ -102,6 +102,15 @@ impl MonitorRunner {
 
 	/// Start monitors from config.
 	pub async fn start_monitors(&self, config: &Config) -> Vec<JoinHandle<()>> {
+		let max_concurrent_checks = config
+			.max_concurrent_checks
+			.or_else(|| {
+				std::env::var("PULSE_MAX_CONCURRENT_CHECKS")
+					.ok()
+					.and_then(|s| s.parse().ok())
+			})
+			.unwrap_or(5000);
+
 		// Start scheduler if needed
 		let mut maybe_handle = None;
 		{
@@ -110,7 +119,6 @@ impl MonitorRunner {
 				let (config_tx, config_rx) = watch::channel(config.clone());
 				let (stop_tx, stop_rx) = oneshot::channel::<()>();
 
-				let max_concurrent_checks: usize = 5000;
 				let jitter_ms_max: u64 = 500;
 
 				let server_url = self.server_url.clone();

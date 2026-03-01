@@ -11,7 +11,7 @@ fn shared_client() -> &'static Client {
 	static CLIENT: OnceLock<Client> = OnceLock::new();
 	CLIENT.get_or_init(|| {
 		Client::builder()
-			.pool_max_idle_per_host(64)
+			.pool_max_idle_per_host(256)
 			.build()
 			.expect("Failed to build HTTP client")
 	})

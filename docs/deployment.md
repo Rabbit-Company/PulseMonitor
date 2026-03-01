@@ -32,6 +32,7 @@ services:
       - PULSE_MAX_QUEUE_SIZE=50000
       - PULSE_MAX_RETRIES=300
       - PULSE_RETRY_DELAY_MS=1000
+			- PULSE_MAX_CONCURRENT_CHECKS=5000
     restart: unless-stopped
 ```
 
@@ -108,6 +109,7 @@ Environment="PULSE_TOKEN=your_token_here"
 # Environment="PULSE_MAX_QUEUE_SIZE=50000"
 # Environment="PULSE_MAX_RETRIES=300"
 # Environment="PULSE_RETRY_DELAY_MS=1000"
+# Environment="PULSE_MAX_CONCURRENT_CHECKS=5000"
 
 ExecStart=/usr/local/bin/pulsemonitor
 Restart=always
@@ -200,6 +202,7 @@ PULSE_TOKEN=your_secure_token_here
 # PULSE_MAX_QUEUE_SIZE=50000
 # PULSE_MAX_RETRIES=300
 # PULSE_RETRY_DELAY_MS=1000
+# PULSE_MAX_CONCURRENT_CHECKS=5000
 ```
 
 Reference in systemd:
@@ -276,13 +279,16 @@ debug = true    # Enable verbose logging
 
 When monitoring a large number of services (1,000+), consider tuning these parameters:
 
-| Parameter              | Default | Recommendation           | Description                                      |
-| ---------------------- | ------- | ------------------------ | ------------------------------------------------ |
-| `PULSE_MAX_QUEUE_SIZE` | `10000` | `50000` for 1k+ monitors | Prevents pulse loss during extended outages      |
-| `PULSE_MAX_RETRIES`    | `300`   | Keep default             | ~5 min retry window covers most transient issues |
-| `PULSE_RETRY_DELAY_MS` | `1000`  | Keep default             | Balance between retry speed and server load      |
+| Parameter                     | Default | Recommendation           | Description                                      |
+| ----------------------------- | ------- | ------------------------ | ------------------------------------------------ |
+| `PULSE_MAX_QUEUE_SIZE`        | `10000` | `50000` for 1k+ monitors | Prevents pulse loss during extended outages      |
+| `PULSE_MAX_RETRIES`           | `300`   | Keep default             | ~5 min retry window covers most transient issues |
+| `PULSE_RETRY_DELAY_MS`        | `1000`  | Keep default             | Balance between retry speed and server load      |
+| `PULSE_MAX_CONCURRENT_CHECKS` | `5000`  | Tune based on resources  | Limits simultaneous checks to prevent overload   |
 
 The retry queue holds one entry per unacknowledged pulse across all monitors. During a server outage, a PulseMonitor instance with 1,000 monitors at 10s intervals generates ~6,000 pulses per minute. With the default queue size of 10,000, this provides roughly 1.5 minutes of buffer. Increase `PULSE_MAX_QUEUE_SIZE` if longer outage tolerance is needed.
+
+The concurrency limit (`PULSE_MAX_CONCURRENT_CHECKS`) caps how many checks can run at once. If you have many monitors with short intervals, you may need to raise this limit to avoid backlogs, but ensure your system has enough file descriptors and CPU capacity.
 
 ## Network Requirements
 
