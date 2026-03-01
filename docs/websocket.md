@@ -21,10 +21,10 @@ When running in WebSocket mode, PulseMonitor maintains a persistent connection t
          │ 4. {"action":"subscribed","data":{...}}│
          │<───────────────────────────────────────│
          │                                        │
-         │ 5. {"action":"push","token":"..."}     │
+         │ 5. {"action":"push","pulseId":"..."}   │
          │───────────────────────────────────────>│
          │                                        │
-         │ 6. {"action":"pushed",...}             │
+         │ 6. {"action":"pushed","pulseId":"..."} │
          │<───────────────────────────────────────│
          │                                        │
          │ 7. {"action":"config-update",...}      │
@@ -70,6 +70,7 @@ Report successful monitor check:
 {
 	"action": "push",
 	"token": "tk_prod_api_abc123",
+	"pulseId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 	"latency": 123.456,
 	"startTime": "2025-01-21T07:06:39.568Z",
 	"endTime": "2025-01-21T07:06:39.691Z"
@@ -82,6 +83,7 @@ Push message with custom metrics (e.g. from Minecraft monitors):
 {
 	"action": "push",
 	"token": "tk_mc_server_abc123",
+	"pulseId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
 	"latency": 45.123,
 	"startTime": "2025-01-21T07:06:39.568Z",
 	"endTime": "2025-01-21T07:06:39.613Z",
@@ -91,16 +93,17 @@ Push message with custom metrics (e.g. from Minecraft monitors):
 }
 ```
 
-| Field       | Type   | Description                        |
-| ----------- | ------ | ---------------------------------- |
-| `action`    | string | Always `"push"`                    |
-| `token`     | string | Monitor's unique token             |
-| `latency`   | number | Round-trip latency in milliseconds |
-| `startTime` | string | Check start time (ISO 8601)        |
-| `endTime`   | string | Check end time (ISO 8601)          |
-| `custom1`   | number | Optional custom metric 1           |
-| `custom2`   | number | Optional custom metric 2           |
-| `custom3`   | number | Optional custom metric 3           |
+| Field       | Type   | Description                                      |
+| ----------- | ------ | ------------------------------------------------ |
+| `action`    | string | Always `"push"`                                  |
+| `token`     | string | Monitor's unique token                           |
+| `pulseId`   | string | Unique identifier for this pulse (UUID, for ack) |
+| `latency`   | number | Round-trip latency in milliseconds               |
+| `startTime` | string | Check start time (ISO 8601)                      |
+| `endTime`   | string | Check end time (ISO 8601)                        |
+| `custom1`   | number | Optional custom metric 1                         |
+| `custom2`   | number | Optional custom metric 2                         |
+| `custom3`   | number | Optional custom metric 3                         |
 
 ### Server → Client
 
@@ -186,15 +189,25 @@ This message is sent when:
 
 #### Pushed
 
-Acknowledgment of received pulse:
+Acknowledgment of a successfully stored pulse. The server echoes back the `pulseId` from the original push message so the client can match it to the queued pulse:
 
 ```json
 {
 	"action": "pushed",
+	"pulseId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 	"monitorId": "api-prod",
 	"timestamp": "2025-01-21T07:06:39.700Z"
 }
 ```
+
+| Field       | Type   | Description                                                |
+| ----------- | ------ | ---------------------------------------------------------- |
+| `action`    | string | Always `"pushed"`                                          |
+| `pulseId`   | string | The `pulseId` from the push message (null if not provided) |
+| `monitorId` | string | Server-side monitor ID                                     |
+| `timestamp` | string | Server timestamp                                           |
+
+The client removes the pulse from its retry queue only after receiving a `pushed` message with the matching `pulseId`. If the server fails to store the pulse (example database is down), it responds with an `error` message instead, and the client will retry the pulse.
 
 #### Error
 
@@ -212,6 +225,48 @@ Common error messages:
 
 - `"Invalid PulseMonitor token"` - Token not found in server config
 - `"Invalid token"` - Monitor token invalid for push action
+- `"Failed to store pulse"` - Server-side storage failure (client should retry)
+
+## Pulse Delivery & Retry Queue
+
+PulseMonitor uses a client-side retry queue to guarantee pulse delivery. This ensures that no monitoring data is lost during transient server outages, network failures, or WebSocket disconnects.
+
+### How It Works
+
+1. Each pulse is assigned a unique `pulseId` (UUID) before being sent
+2. The pulse is stored in an in-memory queue until acknowledged
+3. On receiving a `pushed` response with a matching `pulseId`, the pulse is removed from the queue
+4. If no acknowledgment arrives within the retry delay, the pulse is resent
+5. Pulses that exceed the maximum retry count are dropped
+
+### Duplicate Prevention
+
+Each queued pulse tracks when it was last sent. A pulse is only resent if the retry delay has fully elapsed since the last send attempt. This prevents duplicate deliveries while a pulse is in-flight awaiting acknowledgment.
+
+### Configuration
+
+| Environment Variable   | Default | Description                                      |
+| ---------------------- | ------- | ------------------------------------------------ |
+| `PULSE_MAX_QUEUE_SIZE` | `10000` | Maximum number of unacknowledged pulses in queue |
+| `PULSE_MAX_RETRIES`    | `300`   | Maximum retry attempts before dropping a pulse   |
+| `PULSE_RETRY_DELAY_MS` | `1000`  | Minimum delay between retry attempts (ms)        |
+
+### Queue Behavior
+
+The queue uses a HashMap + VecDeque hybrid structure for O(1) acknowledgment by `pulseId` and fair ordering. When the queue reaches capacity, the oldest pulse is evicted to make room for new ones.
+
+The queue persists across WebSocket reconnections. If the connection drops and reconnects, unacknowledged pulses from the previous connection will be retried on the new connection.
+
+### Capacity Planning
+
+With default settings (max_retries=300, retry_delay=1000ms), each pulse can be retried for up to ~5 minutes. To estimate the queue size needed:
+
+```
+pulses_per_minute = monitor_count / average_interval_seconds × 60
+queue_size_needed = pulses_per_minute × outage_minutes
+```
+
+Example: 1,000 monitors at 10s intervals during a 5-minute outage: `1000/10 × 60 × 5 = 30,000 pulses`. Set `PULSE_MAX_QUEUE_SIZE=50000` with headroom.
 
 ## Monitor Configuration Format
 
@@ -438,17 +493,21 @@ Reconnection delay: **1 second** (constant)
 Connection lost → Wait 1s → Reconnect → Subscribe → Resume monitoring
 ```
 
+The pulse retry queue persists across reconnections. Unacknowledged pulses from the previous connection are retried on the new connection.
+
 ### Heartbeat Delivery
 
 When WebSocket is connected:
 
-1. Pulses sent via WebSocket (preferred)
-2. If WebSocket send fails → HTTP fallback
+1. Pulses are enqueued and sent via WebSocket
+2. Each pulse is tracked by `pulseId` until acknowledged
+3. If WebSocket send fails → HTTP fallback
 
 When WebSocket is disconnected:
 
-1. Pulses sent via HTTP endpoint
+1. Pulses sent via HTTP endpoint with retries
 2. Reconnection continues in background
+3. Once reconnected, queued pulses are retried via WebSocket
 
 ### HTTP Fallback URL
 
@@ -457,6 +516,8 @@ When WebSocket is unavailable, pulses are sent to:
 ```
 GET {PULSE_SERVER_URL}/v1/push/{token}?latency={latency}&startTime={startTimeISO}&endTime={endTimeISO}
 ```
+
+The HTTP fallback uses its own retry loop with the same `PULSE_MAX_RETRIES` and `PULSE_RETRY_DELAY_MS` settings.
 
 ## Server Configuration
 
@@ -492,6 +553,10 @@ url = "https://api.example.com/health"
 timeout = 10
 ```
 
+### Server-Side Requirements
+
+The server must echo back the `pulseId` from push messages in the `pushed` response. This is required for the client-side retry queue to function correctly. If the server fails to store the pulse, it should respond with an `error` message instead of `pushed` so the client retries.
+
 ### Common Issues
 
 | Issue                                   | Cause               | Solution                                                |
@@ -500,3 +565,4 @@ timeout = 10
 | Frequent reconnects                     | Network instability | Check network, increase timeouts                        |
 | Missing config updates                  | Token mismatch      | Ensure monitor's `pulseMonitors` includes this instance |
 | "WebSocket pulse channel not available" | Disconnected        | Will auto-reconnect, HTTP fallback active               |
+| "Pulse queue full"                      | Prolonged outage    | Increase `PULSE_MAX_QUEUE_SIZE`                         |

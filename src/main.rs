@@ -1,5 +1,4 @@
 use clap::Parser;
-use inline_colorization::{color_blue, color_reset, color_yellow};
 use std::fs;
 use std::sync::Arc;
 use tokio::time::{Duration, sleep};
@@ -9,6 +8,7 @@ use utils::{Config, VERSION};
 
 mod heartbeat;
 mod monitor_runner;
+mod pulse_queue;
 mod utils;
 mod ws_client;
 mod services {
@@ -88,7 +88,7 @@ fn determine_config_mode(args: &Args) -> Result<ConfigMode, Box<dyn std::error::
 
 async fn run_file_mode(config: Config) {
 	let runner = MonitorRunner::new();
-	let _handles = runner.start_monitors(&config).await;
+	runner.start_monitors(&config).await;
 
 	loop {
 		sleep(Duration::from_secs(3600)).await;
@@ -105,7 +105,6 @@ async fn run_websocket_mode(server_url: String, token: String) {
 
 	// Create runner with WebSocket pulse sender
 	let runner = MonitorRunner::with_websocket(server_url, pulse_sender);
-	let mut _current_handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
 
 	info!("Waiting for configuration from server...");
 
@@ -117,7 +116,7 @@ async fn run_websocket_mode(server_url: String, token: String) {
 		);
 
 		// Update monitors with new config
-		_current_handles = runner.update_monitors(&config).await;
+		runner.update_monitors(&config).await;
 	}
 
 	// This should only happen if the channel is closed
@@ -142,18 +141,15 @@ async fn main() {
 
 	let args: Args = Args::parse();
 
-	println!("{color_blue}PulseMonitor {}{color_reset}\n", VERSION);
+	info!("PulseMonitor {}", VERSION);
 
 	match determine_config_mode(&args) {
 		Ok(ConfigMode::File(config)) => {
-			println!("{color_yellow}Mode: Local config file{color_reset}\n");
+			info!("Mode: Local config file");
 			run_file_mode(config).await;
 		}
 		Ok(ConfigMode::WebSocket { server_url, token }) => {
-			println!(
-				"{color_yellow}Mode: WebSocket ({}){color_reset}\n",
-				server_url
-			);
+			info!("Mode: WebSocket ({})", server_url);
 			run_websocket_mode(server_url, token).await;
 		}
 		Err(e) => {

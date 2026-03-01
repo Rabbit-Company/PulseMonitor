@@ -104,7 +104,7 @@ url = "https://api.example.com/health"
 timeout = 10             # Seconds (default: 10)
 headers = [
   { "Authorization" = "Bearer TOKEN" },
-  { "User-Agent" = "PulseMonitor/3.13.0" }
+  { "User-Agent" = "PulseMonitor/3.15.0" }
 ]
 ```
 
@@ -370,6 +370,30 @@ In WebSocket mode:
 - The `heartbeat` section is optional (server provides push endpoint)
 - Configuration updates are received automatically
 - No restart required for changes
+- Pulses are delivered reliably via the retry queue with per-pulse acknowledgment
+
+## Environment Variables
+
+### Connection
+
+| Variable           | Description              | Default | Required       |
+| ------------------ | ------------------------ | ------- | -------------- |
+| `PULSE_SERVER_URL` | UptimeMonitor-Server URL | -       | WebSocket mode |
+| `PULSE_TOKEN`      | Authentication token     | -       | WebSocket mode |
+
+### Retry Queue
+
+These variables tune the pulse retry queue used in WebSocket mode. The retry queue ensures no pulses are lost during transient server or network failures.
+
+| Variable               | Description                                      | Default |
+| ---------------------- | ------------------------------------------------ | ------- |
+| `PULSE_MAX_QUEUE_SIZE` | Maximum number of pulses buffered in retry queue | `10000` |
+| `PULSE_MAX_RETRIES`    | Maximum retry attempts per pulse before dropping | `300`   |
+| `PULSE_RETRY_DELAY_MS` | Minimum delay between retry attempts (ms)        | `1000`  |
+
+Each pulse is assigned a unique `pulseId` and tracked individually. The server acknowledges each pulse by echoing its `pulseId` back. Pulses are only removed from the queue after receiving this acknowledgment, ensuring every check interval is recorded even during outages.
+
+With default settings, a pulse will be retried for up to 5 minutes (300 retries × 1s delay) before being dropped. The queue holds up to 10,000 unacknowledged pulses across all monitors.
 
 ## Configuration Priority
 
@@ -382,8 +406,8 @@ In WebSocket mode:
 PulseMonitor validates configuration on startup. Common issues:
 
 | Error                                      | Cause                            | Solution                                        |
-| ------------------------------------------ | -------------------------------- | ----------------------------------------------- |
+| ------------------------------------------ | -------------------------------- | ----------------------------------------------- | --- |
 | "No configuration found"                   | Missing env vars and config file | Set environment variables or create config.toml |
 | "Monitor does not contain X configuration" | Missing service section          | Add the appropriate service block               |
 | "Unsupported HTTP method"                  | Invalid method                   | Use GET, POST, or HEAD                          |
-| "connection timed out"                     | Network/firewall issue           | Check connectivity and timeout values           |
+| "connection timed out"                     | Network/firewall issue           | Check connectivity and timeout values           | s   |

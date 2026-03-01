@@ -2,9 +2,20 @@ use crate::utils::{CheckResult, Monitor};
 use reqwest::Client;
 use std::{
 	error::Error,
+	sync::OnceLock,
 	time::{Duration, Instant},
 };
 use tracing::{debug, warn};
+
+fn shared_client() -> &'static Client {
+	static CLIENT: OnceLock<Client> = OnceLock::new();
+	CLIENT.get_or_init(|| {
+		Client::builder()
+			.pool_max_idle_per_host(64)
+			.build()
+			.expect("Failed to build HTTP client")
+	})
+}
 
 fn extract_json_value(json: &serde_json::Value, path: &str) -> Option<f64> {
 	let mut current = json;
@@ -40,14 +51,13 @@ pub async fn is_http_online(
 		.as_ref()
 		.ok_or("Monitor does not contain HTTP configuration")?;
 
-	let client = Client::builder()
-		.timeout(Duration::from_secs(http.timeout.unwrap_or(10)))
-		.build()?;
+	let client = shared_client();
+	let timeout = Duration::from_secs(http.timeout.unwrap_or(10));
 
 	let mut request = match http.method.to_uppercase().as_str() {
-		"GET" => client.get(&http.url),
-		"POST" => client.post(&http.url),
-		"HEAD" => client.head(&http.url),
+		"GET" => client.get(&http.url).timeout(timeout),
+		"POST" => client.post(&http.url).timeout(timeout),
+		"HEAD" => client.head(&http.url).timeout(timeout),
 		_ => return Err(format!("Unsupported HTTP method: {}", http.method).into()),
 	};
 

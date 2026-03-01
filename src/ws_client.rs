@@ -5,6 +5,7 @@ use tokio::time::{Duration, sleep};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use tracing::{error, info, warn};
 
+use crate::pulse_queue::{PulseQueue, PulseQueueConfig};
 use crate::utils::{Config, PushMessage, WsMessage};
 
 const RECONNECT_DELAY_SECS: u64 = 1;
@@ -26,6 +27,7 @@ pub type PulseSender = mpsc::Sender<PushMessage>;
 pub struct WsClient {
 	ws_url: String,
 	token: String,
+	pulse_queue: PulseQueue,
 	/// Shared sender for pulse messages
 	pulse_tx: Arc<RwLock<Option<mpsc::Sender<PushMessage>>>>,
 }
@@ -38,6 +40,7 @@ impl WsClient {
 		WsClient {
 			ws_url,
 			token: token.to_string(),
+			pulse_queue: PulseQueue::new(PulseQueueConfig::from_env()),
 			pulse_tx: Arc::new(RwLock::new(None)),
 		}
 	}
@@ -102,7 +105,7 @@ impl WsClient {
 		write.send(Message::Text(subscribe_json.into())).await?;
 
 		// Create channel for pulse messages
-		let (pulse_tx, mut pulse_rx) = mpsc::channel::<PushMessage>(256);
+		let (pulse_tx, mut pulse_rx) = mpsc::channel::<PushMessage>(4096);
 
 		// Store the pulse sender for monitors to use
 		{
@@ -112,6 +115,8 @@ impl WsClient {
 
 		info!("WebSocket pulse channel established");
 
+		let retry_delay = self.pulse_queue.retry_delay();
+
 		// Listen for messages and handle pulse sends
 		loop {
 			tokio::select! {
@@ -119,8 +124,13 @@ impl WsClient {
 				msg_result = read.next() => {
 					match msg_result {
 						Some(Ok(Message::Text(text))) => {
-							if let Err(e) = self.handle_message(&text, config_tx).await {
-								error!("Failed to handle message: {}", e);
+							match serde_json::from_str::<WsMessage>(&text) {
+								Ok(ws_msg) => {
+									if let Err(e) = self.handle_parsed_message(ws_msg, config_tx).await {
+										error!("Failed to handle WS message: {}", e);
+									}
+								}
+								Err(e) => error!("Failed to parse WebSocket message: {}", e),
 							}
 						}
 						Some(Ok(Message::Ping(data))) => {
@@ -148,15 +158,19 @@ impl WsClient {
 				pulse_msg = pulse_rx.recv() => {
 					match pulse_msg {
 						Some(push_message) => {
-							match serde_json::to_string(&push_message) {
-								Ok(json) => {
-									if let Err(e) = write.send(Message::Text(json.into())).await {
-										error!("Failed to send pulse via WebSocket: {}", e);
-										break;
+							// Enqueue the pulse (assigns pulseId)
+							self.pulse_queue.enqueue(push_message).await;
+
+							// Send the next pulse from the queue
+							if let Some(msg) = self.pulse_queue.next_to_send().await {
+								match serde_json::to_string(&msg) {
+									Ok(json) => {
+										if let Err(e) = write.send(Message::Text(json.into())).await {
+											error!("Failed to send pulse via WebSocket: {}", e);
+											break;
+										}
 									}
-								}
-								Err(e) => {
-									error!("Failed to serialize pulse message: {}", e);
+									Err(e) => error!("Failed to serialize pulse: {}", e),
 								}
 							}
 						}
@@ -167,29 +181,47 @@ impl WsClient {
 						}
 					}
 				}
+
+				// Retry timer -> periodically resend unacknowledged pulses
+				_ = sleep(retry_delay) => {
+					self.pulse_queue.prune_expired().await;
+
+					// cap per tick to avoid huge bursts
+					const MAX_RETRIES_PER_TICK: usize = 2000;
+
+					let batch = self.pulse_queue.next_batch_to_send(MAX_RETRIES_PER_TICK).await;
+					for msg in batch {
+						match serde_json::to_string(&msg) {
+							Ok(json) => {
+								if let Err(e) = write.send(Message::Text(json.into())).await {
+									error!("Failed to retry pulse: {}", e);
+									break;
+								}
+							}
+							Err(e) => error!("Failed to serialize retry pulse: {}", e),
+						}
+					}
+				}
+
 			}
 		}
 
 		Ok(())
 	}
 
-	async fn handle_message(
+	async fn handle_parsed_message(
 		&self,
-		text: &str,
+		message: WsMessage,
 		config_tx: &mpsc::Sender<Config>,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let message: WsMessage = serde_json::from_str(text)?;
-
 		match message {
-			WsMessage::Connected {
-				message: _,
-				timestamp: _,
-			} => {}
+			WsMessage::Connected { .. } => {}
+
 			WsMessage::Subscribed {
 				pulse_monitor_id,
 				pulse_monitor_name,
 				data,
-				timestamp: _,
+				..
 			} => {
 				info!(
 					"Subscription successful: {} ({})",
@@ -205,17 +237,17 @@ impl WsClient {
 					error!("Failed to send config update: {}", e);
 				}
 			}
-			WsMessage::Error {
-				message,
-				timestamp: _,
-			} => {
+
+			WsMessage::Error { message, .. } => {
 				error!("Server error: {}", message);
+
 				// For invalid token, we might want to exit
 				if message.contains("Invalid") {
 					return Err(format!("Authentication failed: {}", message).into());
 				}
 			}
-			WsMessage::ConfigUpdate { data, timestamp: _ } => {
+
+			WsMessage::ConfigUpdate { data, .. } => {
 				info!(
 					"Received configuration update with {} monitors",
 					data.monitors.len()
@@ -229,14 +261,14 @@ impl WsClient {
 					error!("Failed to send config update: {}", e);
 				}
 			}
-			WsMessage::Pushed {
-				monitor_id: _,
-				timestamp: _,
-			} => {
-				// Pulse acknowledged by server - no action needed
+
+			WsMessage::Pushed { pulse_id, .. } => {
+				if let Some(pid) = pulse_id {
+					self.pulse_queue.acknowledge(&pid).await;
+				}
 			}
+
 			WsMessage::Subscribe { .. } => {
-				// This shouldn't be received from server
 				warn!("Received unexpected Subscribe message from server");
 			}
 		}

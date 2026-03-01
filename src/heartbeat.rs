@@ -1,3 +1,4 @@
+use crate::pulse_queue::PulseQueueConfig;
 use crate::utils::{
 	CheckResult, HeartbeatConfig, Monitor, PushMessage, resolve_custom_placeholders,
 };
@@ -5,10 +6,11 @@ use crate::ws_client::PulseSender;
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::Client;
 use std::error::Error;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::RwLock;
-use tracing::warn;
+use tokio::time::sleep;
+use tracing::{info, warn};
 
 fn build_heartbeat_url(server_url: &str, token: &str) -> String {
 	let base_url = server_url.trim_end_matches('/');
@@ -16,6 +18,17 @@ fn build_heartbeat_url(server_url: &str, token: &str) -> String {
 		"{}/v1/push/{}?latency={{latency}}&startTime={{startTimeISO}}&endTime={{endTimeISO}}&custom1={{custom1}}&custom2={{custom2}}&custom3={{custom3}}",
 		base_url, token
 	)
+}
+
+fn http_client() -> &'static Client {
+	static CLIENT: OnceLock<Client> = OnceLock::new();
+	CLIENT.get_or_init(|| {
+		Client::builder()
+			.timeout(Duration::from_secs(10))
+			.pool_max_idle_per_host(64)
+			.build()
+			.expect("Failed to build HTTP client")
+	})
 }
 
 fn apply_templates(
@@ -49,9 +62,7 @@ pub async fn send_heartbeat_with_config(
 	latency_ms: f64,
 	custom_placeholders: &[(String, String)],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-	let client = Client::builder()
-		.timeout(Duration::from_secs(heartbeat.timeout.unwrap_or(10)))
-		.build()?;
+	let client = http_client();
 
 	let latency_str = latency_ms.to_string();
 	let start_time_unix = start_check_time.timestamp_millis().to_string();
@@ -110,8 +121,10 @@ pub async fn send_heartbeat_with_token_http(
 	end_check_time: DateTime<Utc>,
 	latency_ms: f64,
 	custom_placeholders: &[(String, String)],
+	max_retries: u32,
+	retry_delay_ms: u64,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-	let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
+	let client = http_client();
 
 	let latency_str = latency_ms.to_string();
 	let start_time_unix = start_check_time.timestamp_millis().to_string();
@@ -130,13 +143,35 @@ pub async fn send_heartbeat_with_token_http(
 		custom_placeholders,
 	);
 
-	let response = client.get(&url).send().await?;
+	let mut last_error = None;
+	for attempt in 1..=max_retries + 1 {
+		match client.get(&url).send().await {
+			Ok(response) if response.status().is_success() => {
+				if attempt > 1 {
+					info!("HTTP pulse succeeded on attempt {}", attempt);
+				}
+				return Ok(());
+			}
+			Ok(response) => {
+				last_error = Some(format!("HTTP {} on attempt {}", response.status(), attempt));
+				warn!("{}", last_error.as_ref().unwrap());
+			}
+			Err(e) => {
+				last_error = Some(format!("Request error on attempt {}: {}", attempt, e));
+				warn!("{}", last_error.as_ref().unwrap());
+			}
+		}
 
-	if response.status().is_success() {
-		Ok(())
-	} else {
-		Err(format!("Request failed with status: {}", response.status()).into())
+		if attempt <= max_retries {
+			sleep(Duration::from_millis(retry_delay_ms)).await;
+		}
 	}
+
+	Err(
+		last_error
+			.unwrap_or_else(|| "Unknown error".to_string())
+			.into(),
+	)
 }
 
 /// Send heartbeat using WebSocket connection
@@ -162,13 +197,20 @@ pub async fn send_heartbeat_via_websocket(
 	// Get the sender and send the message
 	let sender_guard = pulse_sender.read().await;
 	if let Some(sender) = sender_guard.as_ref() {
-		sender
-			.send(push_message)
-			.await
-			.map_err(|e| -> Box<dyn Error + Send + Sync> {
-				format!("Failed to send pulse via WebSocket channel: {}", e).into()
-			})?;
-		Ok(())
+		match sender.try_send(push_message) {
+			Ok(_) => Ok(()),
+			Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => {
+				// At scale, prefer dropping over blocking checks.
+				warn!(
+					"WebSocket pulse channel full; dropping pulse for token {}",
+					token
+				);
+				Ok(())
+			}
+			Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+				Err("WebSocket pulse channel closed".into())
+			}
+		}
 	} else {
 		Err("WebSocket pulse channel not available".into())
 	}
@@ -215,6 +257,7 @@ pub async fn send_heartbeat(
 				// WebSocket send failed, fall back to HTTP if server_url is available
 				warn!("WebSocket pulse failed ({}), falling back to HTTP", e);
 				if let Some(url) = server_url {
+					let cfg = PulseQueueConfig::cached();
 					return send_heartbeat_with_token_http(
 						url,
 						token,
@@ -222,6 +265,8 @@ pub async fn send_heartbeat(
 						end_check_time,
 						latency_ms,
 						&custom_placeholders,
+						cfg.max_retries,
+						cfg.retry_delay_ms,
 					)
 					.await;
 				}
@@ -232,6 +277,7 @@ pub async fn send_heartbeat(
 
 	// HTTP-only mode (WebSocket mode without active connection)
 	if let (Some(token), Some(url)) = (&monitor.token, server_url) {
+		let cfg = PulseQueueConfig::cached();
 		return send_heartbeat_with_token_http(
 			url,
 			token,
@@ -239,6 +285,8 @@ pub async fn send_heartbeat(
 			end_check_time,
 			latency_ms,
 			&custom_placeholders,
+			cfg.max_retries,
+			cfg.retry_delay_ms,
 		)
 		.await;
 	}

@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.14.0"
+version = "3.15.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2024"
@@ -20,8 +20,6 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 # CLI and UI
 clap = { version = "4.5", features = ["derive"] }
-comfy-table = "7.2"
-inline_colorization = "0.1"
 
 # Async runtime and utilities
 tokio = { version = "1.49", features = ["full"] }
@@ -90,3 +88,4 @@ snmp2 = { version = "0.4", features = ["v3", "tokio"] }
 
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 chrono = "0.4"
+uuid = { version = "1.21", features = ["v4"] }

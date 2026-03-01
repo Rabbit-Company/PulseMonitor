@@ -8,7 +8,8 @@ A high-performance Rust monitoring agent that sends heartbeat pulses to uptime m
 | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
 | **Multi-Protocol**     | Monitor HTTP, WS, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, SNMP, Minecraft Java/Bedrock |
 | **Dual Mode**          | File-based config or centralized WebSocket management                                                       |
-| **Auto-Reconnect**     | Automatic 1-second delay reconnection on connection failure                                                 |
+| **Reliable Delivery**  | Pulse retry queue with per-pulse acknowledgment ensures no data loss                                        |
+| **Auto-Reconnect**     | Automatic reconnection with HTTP fallback when WebSocket is unavailable                                     |
 | **Live Updates**       | Real-time configuration changes without restart (WebSocket mode)                                            |
 | **Template Variables** | Dynamic placeholders for latency, timestamps, and custom metrics in heartbeat URLs                          |
 | **Low Resource**       | Efficient Rust implementation with minimal overhead                                                         |
@@ -82,6 +83,8 @@ Benefits:
 - Centralized configuration management
 - Real-time updates without restart
 - Automatic reconnection on failure
+- Reliable pulse delivery with retry queue and acknowledgment
+- HTTP fallback when WebSocket is unavailable
 - Multi-region deployment from single server
 
 ### File Mode
@@ -129,10 +132,13 @@ Use these in heartbeat URLs and headers:
 
 ## Environment Variables
 
-| Variable           | Description              | Required       |
-| ------------------ | ------------------------ | -------------- |
-| `PULSE_SERVER_URL` | UptimeMonitor-Server URL | WebSocket mode |
-| `PULSE_TOKEN`      | Authentication token     | WebSocket mode |
+| Variable               | Description                                      | Default | Required       |
+| ---------------------- | ------------------------------------------------ | ------- | -------------- |
+| `PULSE_SERVER_URL`     | UptimeMonitor-Server URL                         | -       | WebSocket mode |
+| `PULSE_TOKEN`          | Authentication token                             | -       | WebSocket mode |
+| `PULSE_MAX_QUEUE_SIZE` | Maximum number of pulses in retry queue          | 10000   | No             |
+| `PULSE_MAX_RETRIES`    | Maximum retry attempts per pulse before dropping | 300     | No             |
+| `PULSE_RETRY_DELAY_MS` | Delay in milliseconds between retry attempts     | 10000   | No             |
 
 ## License
 

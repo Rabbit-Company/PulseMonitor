@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.14.0";
+pub const VERSION: &str = "v3.15.0";
 
 #[derive(Default, Debug, Clone)]
 pub struct CheckResult {
@@ -262,6 +262,8 @@ pub struct PushMessage {
 	pub action: String,
 	pub token: String,
 	#[serde(skip_serializing_if = "Option::is_none")]
+	pub pulse_id: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub latency: Option<f64>,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub start_time: Option<String>,
@@ -285,6 +287,7 @@ impl PushMessage {
 		PushMessage {
 			action: "push".to_string(),
 			token: token.to_string(),
+			pulse_id: None,
 			latency,
 			start_time,
 			end_time,
@@ -330,6 +333,8 @@ pub enum WsMessage {
 		timestamp: String,
 	},
 	Pushed {
+		#[serde(rename = "pulseId")]
+		pulse_id: Option<String>,
 		#[serde(rename = "monitorId")]
 		monitor_id: String,
 		timestamp: String,

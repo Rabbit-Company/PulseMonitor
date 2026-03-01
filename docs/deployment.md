@@ -19,6 +19,22 @@ services:
     restart: unless-stopped
 ```
 
+To tune the retry queue for high-scale deployments:
+
+```yaml
+services:
+  pulsemonitor:
+    container_name: pulsemonitor
+    image: rabbitcompany/pulsemonitor:3
+    environment:
+      - PULSE_SERVER_URL=http://uptime-server:3000
+      - PULSE_TOKEN=your_pulsemonitor_token
+      - PULSE_MAX_QUEUE_SIZE=50000
+      - PULSE_MAX_RETRIES=300
+      - PULSE_RETRY_DELAY_MS=1000
+    restart: unless-stopped
+```
+
 ### File Mode
 
 Use a local configuration file:
@@ -87,6 +103,11 @@ Group=pulsemonitor
 # WebSocket mode configuration
 Environment="PULSE_SERVER_URL=http://localhost:3000"
 Environment="PULSE_TOKEN=your_token_here"
+
+# Optional: tune retry queue for large deployments
+# Environment="PULSE_MAX_QUEUE_SIZE=50000"
+# Environment="PULSE_MAX_RETRIES=300"
+# Environment="PULSE_RETRY_DELAY_MS=1000"
 
 ExecStart=/usr/local/bin/pulsemonitor
 Restart=always
@@ -174,6 +195,11 @@ Create `/etc/pulsemonitor/.env` for cleaner configuration:
 ```env
 PULSE_SERVER_URL=http://localhost:3000
 PULSE_TOKEN=your_secure_token_here
+
+# Optional: retry queue tuning
+# PULSE_MAX_QUEUE_SIZE=50000
+# PULSE_MAX_RETRIES=300
+# PULSE_RETRY_DELAY_MS=1000
 ```
 
 Reference in systemd:
@@ -246,6 +272,18 @@ interval = 30
 debug = true    # Enable verbose logging
 ```
 
+## Scaling Considerations
+
+When monitoring a large number of services (1,000+), consider tuning these parameters:
+
+| Parameter              | Default | Recommendation           | Description                                      |
+| ---------------------- | ------- | ------------------------ | ------------------------------------------------ |
+| `PULSE_MAX_QUEUE_SIZE` | `10000` | `50000` for 1k+ monitors | Prevents pulse loss during extended outages      |
+| `PULSE_MAX_RETRIES`    | `300`   | Keep default             | ~5 min retry window covers most transient issues |
+| `PULSE_RETRY_DELAY_MS` | `1000`  | Keep default             | Balance between retry speed and server load      |
+
+The retry queue holds one entry per unacknowledged pulse across all monitors. During a server outage, a PulseMonitor instance with 1,000 monitors at 10s intervals generates ~6,000 pulses per minute. With the default queue size of 10,000, this provides roughly 1.5 minutes of buffer. Increase `PULSE_MAX_QUEUE_SIZE` if longer outage tolerance is needed.
+
 ## Network Requirements
 
 ### Outbound Connections
@@ -282,6 +320,7 @@ iptables -A OUTPUT -p icmp -j ACCEPT
 | "Authentication failed"       | Invalid token                    | Verify PULSE_TOKEN matches server configuration         |
 | "Permission denied" (ICMP)    | Missing capability               | Run `setcap cap_net_raw+ep` or run as root              |
 | "Connection timed out"        | Firewall/network issue           | Check firewall rules, verify target is reachable        |
+| "Pulse queue full"            | Prolonged outage or high volume  | Increase PULSE_MAX_QUEUE_SIZE                           |
 
 ### Test Configuration
 
