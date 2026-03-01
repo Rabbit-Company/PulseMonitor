@@ -29,6 +29,7 @@ services:
     environment:
       - PULSE_SERVER_URL=http://uptime-server:3000
       - PULSE_TOKEN=your_pulsemonitor_token
+			- PULSE_LOG_LEVEL=ERROR
       - PULSE_MAX_QUEUE_SIZE=50000
       - PULSE_MAX_RETRIES=300
       - PULSE_RETRY_DELAY_MS=1000
@@ -101,6 +102,8 @@ Type=simple
 User=pulsemonitor
 Group=pulsemonitor
 
+Environment="PULSE_LOG_LEVEL=INFO"
+
 # WebSocket mode configuration
 Environment="PULSE_SERVER_URL=http://localhost:3000"
 Environment="PULSE_TOKEN=your_token_here"
@@ -109,6 +112,7 @@ Environment="PULSE_TOKEN=your_token_here"
 # Environment="PULSE_MAX_QUEUE_SIZE=50000"
 # Environment="PULSE_MAX_RETRIES=300"
 # Environment="PULSE_RETRY_DELAY_MS=1000"
+
 # Environment="PULSE_MAX_CONCURRENT_CHECKS=5000"
 
 ExecStart=/usr/local/bin/pulsemonitor
@@ -198,10 +202,13 @@ Create `/etc/pulsemonitor/.env` for cleaner configuration:
 PULSE_SERVER_URL=http://localhost:3000
 PULSE_TOKEN=your_secure_token_here
 
+PULSE_LOG_LEVEL=INFO
+
 # Optional: retry queue tuning
 # PULSE_MAX_QUEUE_SIZE=50000
 # PULSE_MAX_RETRIES=300
 # PULSE_RETRY_DELAY_MS=1000
+
 # PULSE_MAX_CONCURRENT_CHECKS=5000
 ```
 

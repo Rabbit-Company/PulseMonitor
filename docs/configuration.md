@@ -374,6 +374,12 @@ In WebSocket mode:
 
 ## Environment Variables
 
+### Log level
+
+| Variable          | Description                                              | Default | Required |
+| ----------------- | -------------------------------------------------------- | ------- | -------- |
+| `PULSE_LOG_LEVEL` | Log verbosity: `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE` | `INFO`  | No       |
+
 ### Connection
 
 | Variable           | Description              | Default | Required       |

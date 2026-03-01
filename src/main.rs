@@ -1,6 +1,6 @@
 use clap::Parser;
-use std::fs;
 use std::sync::Arc;
+use std::{fs, str::FromStr};
 use tokio::time::{Duration, sleep};
 use tracing::{Level, error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -47,9 +47,6 @@ enum ConfigMode {
 }
 
 fn load_env_config() -> Option<(String, String)> {
-	// Try to load from .env file
-	let _ = dotenvy::dotenv();
-
 	let server_url = std::env::var("PULSE_SERVER_URL").ok();
 	let token = std::env::var("PULSE_TOKEN").ok();
 
@@ -125,10 +122,21 @@ async fn run_websocket_mode(server_url: String, token: String) {
 
 #[tokio::main]
 async fn main() {
+	let _ = dotenvy::dotenv();
+
+	let log_level: String = std::env::var("PULSE_LOG_LEVEL")
+		.unwrap_or("INFO".to_string())
+		.to_uppercase();
+
+	let level = Level::from_str(&log_level).unwrap_or_else(|_| {
+    eprintln!("Invalid PULSE_LOG_LEVEL '{}', defaulting to INFO. Valid values: TRACE, DEBUG, INFO, WARN, ERROR", log_level);
+    Level::INFO
+	});
+
 	tracing_subscriber::fmt()
 		.with_env_filter(
 			EnvFilter::from_default_env()
-				.add_directive(Level::INFO.into())
+				.add_directive(level.into())
 				.add_directive("tiberius=off".parse().unwrap())
 				.add_directive("tokio_util=off".parse().unwrap())
 				.add_directive("elytra_ping=off".parse().unwrap()),

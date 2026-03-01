@@ -132,14 +132,15 @@ Use these in heartbeat URLs and headers:
 
 ## Environment Variables
 
-| Variable                      | Description                                      | Default | Required       |
-| ----------------------------- | ------------------------------------------------ | ------- | -------------- |
-| `PULSE_SERVER_URL`            | UptimeMonitor-Server URL                         | -       | WebSocket mode |
-| `PULSE_TOKEN`                 | Authentication token                             | -       | WebSocket mode |
-| `PULSE_MAX_QUEUE_SIZE`        | Maximum number of pulses in retry queue          | 10000   | No             |
-| `PULSE_MAX_RETRIES`           | Maximum retry attempts per pulse before dropping | 300     | No             |
-| `PULSE_RETRY_DELAY_MS`        | Delay in milliseconds between retry attempts     | 10000   | No             |
-| `PULSE_MAX_CONCURRENT_CHECKS` | Maximum number of simultaneous service checks    | 5000    | No             |
+| Variable                      | Description                                              | Default | Required       |
+| ----------------------------- | -------------------------------------------------------- | ------- | -------------- |
+| `PULSE_LOG_LEVEL`             | Log verbosity: `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE` | `INFO`  | No             |
+| `PULSE_SERVER_URL`            | UptimeMonitor-Server URL                                 | -       | WebSocket mode |
+| `PULSE_TOKEN`                 | Authentication token                                     | -       | WebSocket mode |
+| `PULSE_MAX_QUEUE_SIZE`        | Maximum number of pulses in retry queue                  | 10000   | No             |
+| `PULSE_MAX_RETRIES`           | Maximum retry attempts per pulse before dropping         | 300     | No             |
+| `PULSE_RETRY_DELAY_MS`        | Delay in milliseconds between retry attempts             | 10000   | No             |
+| `PULSE_MAX_CONCURRENT_CHECKS` | Maximum number of simultaneous service checks            | 5000    | No             |
 
 ## License
 
