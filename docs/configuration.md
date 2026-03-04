@@ -104,7 +104,7 @@ url = "https://api.example.com/health"
 timeout = 10             # Seconds (default: 10)
 headers = [
   { "Authorization" = "Bearer TOKEN" },
-  { "User-Agent" = "PulseMonitor/3.15.0" }
+  { "User-Agent" = "PulseMonitor/3.15.1" }
 ]
 ```
 

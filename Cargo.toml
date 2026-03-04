@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.15.0"
+version = "3.15.1"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2024"
@@ -37,6 +37,7 @@ dotenvy = "0.15"
 # HTTP
 reqwest = { version = "0.13", default-features = false, features = [
 	"rustls",
+	"hickory-dns"
 ] }
 
 # WebSocket

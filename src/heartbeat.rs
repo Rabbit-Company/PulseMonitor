@@ -24,8 +24,9 @@ fn http_client() -> &'static Client {
 	static CLIENT: OnceLock<Client> = OnceLock::new();
 	CLIENT.get_or_init(|| {
 		Client::builder()
+			.pool_max_idle_per_host(2)
+			.pool_idle_timeout(Duration::from_secs(15))
 			.timeout(Duration::from_secs(10))
-			.pool_max_idle_per_host(256)
 			.build()
 			.expect("Failed to build HTTP client")
 	})
