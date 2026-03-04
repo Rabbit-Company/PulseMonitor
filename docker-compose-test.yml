@@ -53,6 +53,11 @@ services:
     build: .
     container_name: pulsemonitor
     restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
     volumes:
       - ./config-test.toml:/config.toml
     networks:

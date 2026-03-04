@@ -36,6 +36,11 @@ services:
       - PULSE_SERVER_URL=http://your-server:3000
       - PULSE_TOKEN=your_token_here
     restart: unless-stopped
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 ```
 
 **File Mode** (standalone):
@@ -48,6 +53,11 @@ services:
     volumes:
       - ./config.toml:/config.toml
     restart: unless-stopped
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 ```
 
 ### Binary Installation

@@ -17,6 +17,11 @@ services:
       - PULSE_SERVER_URL=http://uptime-server:3000
       - PULSE_TOKEN=your_pulsemonitor_token
     restart: unless-stopped
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 ```
 
 To tune the retry queue for high-scale deployments:
@@ -35,6 +40,11 @@ services:
       - PULSE_RETRY_DELAY_MS=1000
 			- PULSE_MAX_CONCURRENT_CHECKS=5000
     restart: unless-stopped
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 ```
 
 ### File Mode
@@ -49,6 +59,11 @@ services:
     volumes:
       - ./config.toml:/config.toml:ro
     restart: unless-stopped
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 ```
 
 ## Binary Installation
@@ -119,6 +134,9 @@ ExecStart=/usr/local/bin/pulsemonitor
 Restart=always
 RestartSec=5
 
+# Important
+LimitNOFILE=65536
+
 # Security hardening
 NoNewPrivileges=true
 ProtectSystem=strict
@@ -148,6 +166,9 @@ Group=pulsemonitor
 ExecStart=/usr/local/bin/pulsemonitor --config /etc/pulsemonitor/config.toml
 Restart=always
 RestartSec=5
+
+# Important
+LimitNOFILE=65536
 
 # Security hardening
 NoNewPrivileges=true
