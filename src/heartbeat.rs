@@ -26,6 +26,7 @@ fn http_client() -> &'static Client {
 		Client::builder()
 			.pool_max_idle_per_host(2)
 			.pool_idle_timeout(Duration::from_secs(15))
+			.hickory_dns(true)
 			.timeout(Duration::from_secs(10))
 			.build()
 			.expect("Failed to build HTTP client")
