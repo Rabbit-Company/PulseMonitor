@@ -34,7 +34,7 @@ jobs:
         run: cross build --target ${{ matrix.target }} --release
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: target/${{ matrix.target }}/release/pulsemonitor
