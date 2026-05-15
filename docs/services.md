@@ -1,6 +1,6 @@
 # Service Monitors
 
-PulseMonitor supports 14 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
+PulseMonitor supports 15 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
 
 ## Overview
 
@@ -11,6 +11,7 @@ PulseMonitor supports 14 different service types. Each monitor checks a service'
 | [TCP](#tcp)                             | TCP              | 5s              |
 | [UDP](#udp)                             | UDP              | 3s              |
 | [ICMP](#icmp)                           | ICMP (ping)      | 3s              |
+| [DNS](#dns)                             | DNS (UDP/TCP)    | 3s              |
 | [SMTP](#smtp)                           | SMTP/SMTPS       | -               |
 | [IMAP](#imap)                           | IMAP/IMAPS       | -               |
 | [MySQL](#mysql)                         | MySQL            | 3s              |
@@ -249,23 +250,23 @@ host = "dns.example.com"     # Required: Hostname or IP
 port = 53                    # Required: Port number
 timeout = 3                  # Optional: Seconds (default: 3)
 payload = "ping"             # Optional: Data to send (default: "ping")
-expect_response = false      # Optional: Wait for response (default: false)
+expectResponse = false       # Optional: Wait for response (default: false)
 ```
 
 ### Options
 
-| Option            | Type    | Default | Description                   |
-| ----------------- | ------- | ------- | ----------------------------- |
-| `host`            | string  | -       | Target hostname or IP address |
-| `port`            | integer | -       | Target port (1-65535)         |
-| `timeout`         | integer | 3       | Response timeout in seconds   |
-| `payload`         | string  | "ping"  | Data to send                  |
-| `expect_response` | boolean | false   | Whether to wait for response  |
+| Option           | Type    | Default | Description                   |
+| ---------------- | ------- | ------- | ----------------------------- |
+| `host`           | string  | -       | Target hostname or IP address |
+| `port`           | integer | -       | Target port (1-65535)         |
+| `timeout`        | integer | 3       | Response timeout in seconds   |
+| `payload`        | string  | "ping"  | Data to send                  |
+| `expectResponse` | boolean | false   | Whether to wait for response  |
 
 ### Success Criteria
 
 - Packet sent successfully
-- If `expect_response = true`: Response received within timeout
+- If `expectResponse = true`: Response received within timeout
 
 ### Examples
 
@@ -276,7 +277,7 @@ expect_response = false      # Optional: Wait for response (default: false)
 host = "syslog.example.com"
 port = 514
 payload = "<14>test"
-expect_response = false
+expectResponse = false
 ```
 
 **Response expected:**
@@ -286,7 +287,7 @@ expect_response = false
 host = "game-server.example.com"
 port = 27015
 payload = "\xFF\xFF\xFF\xFFTSource Engine Query"
-expect_response = true
+expectResponse = true
 timeout = 2
 ```
 
@@ -356,6 +357,127 @@ timeout = 1
 [monitors.icmp]
 host = "google.com"
 timeout = 3
+```
+
+---
+
+## DNS
+
+Monitor DNS servers by sending a real DNS query and verifying the response.
+Unlike ICMP (which only tells you the host is reachable), this confirms the
+DNS service is actually answering queries correctly. Returns the round-trip
+latency of the query.
+
+### Configuration
+
+```toml
+[monitors.dns]
+host = "8.8.8.8"             # Required: DNS server hostname or IP
+port = 53                    # Optional: Port (default: 53)
+query = "google.com"         # Required: Domain to look up
+recordType = "A"             # Optional: Record type (default: "A")
+protocol = "udp"             # Optional: "udp" or "tcp" (default: "udp")
+timeout = 3                  # Optional: Seconds (default: 3)
+requireAnswer = true         # Optional: Require ≥1 answer (default: true)
+expectedValue = ""           # Optional: Substring that must appear in an answer
+```
+
+### Options
+
+| Option          | Type    | Default | Description                                                              |
+| --------------- | ------- | ------- | ------------------------------------------------------------------------ |
+| `host`          | string  | -       | DNS server hostname or IP address                                        |
+| `port`          | integer | 53      | DNS server port (1-65535)                                                |
+| `query`         | string  | -       | Domain name to look up                                                   |
+| `recordType`    | string  | "A"     | A, AAAA, CAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, ANY                     |
+| `protocol`      | string  | "udp"   | Transport protocol: `udp` or `tcp`                                       |
+| `timeout`       | integer | 3       | Query timeout in seconds                                                 |
+| `requireAnswer` | boolean | true    | Require at least one answer record for success                           |
+| `expectedValue` | string  | -       | Optional substring that must appear in at least one answer (set to skip) |
+
+### Success Criteria
+
+- DNS server reachable and responsive within timeout
+- Response code is `NoError` (RCODE 0)
+- If `requireAnswer = true`: response contains at least one answer record
+- If `expectedValue` is set: at least one answer record contains the substring
+
+### Custom Metrics
+
+Populates `{custom1}` and `{answerCount}` with the number of answer records
+returned. Useful for catching cases where a DNS server is up but returning
+empty or partial results (e.g. a misconfigured authoritative server).
+
+### Examples
+
+**Public resolver — Google DNS:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Google Public DNS"
+interval = 60
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}"
+
+[monitors.dns]
+host = "8.8.8.8"
+query = "google.com"
+recordType = "A"
+```
+
+**Internal authoritative server — verify a specific record exists:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Internal DNS — auth zone"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&answers={custom1}"
+
+[monitors.dns]
+host = "ns1.internal.example.com"
+query = "api.internal.example.com"
+recordType = "A"
+expectedValue = "10.0."          # Must resolve to a 10.0.x.x address
+timeout = 2
+```
+
+**TCP fallback (large responses or strict environments):**
+
+```toml
+[monitors.dns]
+host = "1.1.1.1"
+port = 53
+query = "cloudflare.com"
+recordType = "AAAA"
+protocol = "tcp"
+timeout = 5
+```
+
+**MX record lookup for mail-server health:**
+
+```toml
+[monitors.dns]
+host = "ns1.example.com"
+query = "example.com"
+recordType = "MX"
+expectedValue = "mail.example.com"
+```
+
+**Non-standard port (recursive resolver behind a NAT):**
+
+```toml
+[monitors.dns]
+host = "dns.lab.example.com"
+port = 5353
+query = "test.lab.example.com"
+recordType = "A"
 ```
 
 ---
@@ -551,7 +673,7 @@ Monitor PostgreSQL by executing a test query.
 [monitors.postgresql]
 url = "postgresql://user:pass@localhost:5432/database"   # Required
 timeout = 3                                               # Optional: Seconds (default: 3)
-use_tls = false                                          # Optional: Enable TLS (default: false)
+useTls = false                                          # Optional: Enable TLS (default: false)
 ```
 
 ### URL Format
@@ -581,7 +703,7 @@ timeout = 3
 [monitors.postgresql]
 url = "postgresql://monitor:password@db.example.com:5432/production"
 timeout = 5
-use_tls = true
+useTls = true
 ```
 
 ---

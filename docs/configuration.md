@@ -36,7 +36,7 @@ debug = false            # Enable verbose logging (optional)
 [monitors.heartbeat]     # Where to send success notifications
 # ... heartbeat config
 
-[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, smtp, imap, mysql, mssql, postgresql, redis, minecraft-java, minecraft-bedrock
+[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, dns, smtp, imap, mysql, mssql, postgresql, redis, minecraft-java, minecraft-bedrock
 # ... service-specific config
 ```
 
@@ -104,7 +104,7 @@ url = "https://api.example.com/health"
 timeout = 10             # Seconds (default: 10)
 headers = [
   { "Authorization" = "Bearer TOKEN" },
-  { "User-Agent" = "PulseMonitor/3.15.1" }
+  { "User-Agent" = "PulseMonitor/3.16.0" }
 ]
 ```
 
@@ -133,7 +133,7 @@ host = "127.0.0.1"
 port = 9000
 timeout = 3              # Seconds (default: 3)
 payload = "ping"         # Data to send (default: "ping")
-expect_response = true   # Wait for response (default: false)
+expectResponse = true    # Wait for response (default: false)
 ```
 
 ### ICMP (Ping) Monitoring
@@ -145,6 +145,23 @@ timeout = 2              # Seconds (default: 3)
 ```
 
 > **Note:** ICMP requires root/administrator privileges or `CAP_NET_RAW` capability.
+
+### DNS Monitoring
+
+```toml
+[monitors.dns]
+host = "8.8.8.8"         # DNS server hostname or IP
+port = 53                # Optional: Port (default: 53)
+query = "google.com"     # Domain to look up
+recordType = "A"         # Optional: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, ANY (default: "A")
+protocol = "udp"         # Optional: "udp" or "tcp" (default: "udp")
+timeout = 3              # Optional: Seconds (default: 3)
+requireAnswer = true     # Optional: Require ≥1 answer record (default: true)
+expectedValue = ""       # Optional: Substring that must appear in an answer record
+```
+
+Populates `{custom1}` and `{answerCount}` with the number of answer records
+returned. See [DNS](services.md#dns) for details.
 
 ### SMTP Monitoring
 
@@ -192,7 +209,7 @@ timeout = 3              # Seconds (default: 3)
 [monitors.postgresql]
 url = "postgresql://username:password@localhost:5432/database"
 timeout = 3              # Seconds (default: 3)
-use_tls = false          # Enable TLS (default: false)
+useTls = false           # Enable TLS (default: false)
 ```
 
 ### Redis Monitoring
@@ -313,7 +330,7 @@ url = "https://uptime.example.com/api/push/db-token?latency={latency}"
 [monitors.postgresql]
 url = "postgresql://monitor:password@db.example.com:5432/production"
 timeout = 5
-use_tls = true
+useTls = true
 
 # Redis Cache Monitor
 [[monitors]]

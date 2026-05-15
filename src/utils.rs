@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.15.1";
+pub const VERSION: &str = "v3.16.0";
 
 #[derive(Default, Debug, Clone)]
 pub struct CheckResult {
@@ -95,6 +95,7 @@ pub struct Monitor {
 	pub tcp: Option<TcpConfig>,
 	pub udp: Option<UdpConfig>,
 	pub icmp: Option<IcmpConfig>,
+	pub dns: Option<DnsConfig>,
 	pub smtp: Option<SmtpConfig>,
 	pub imap: Option<ImapConfig>,
 	pub mysql: Option<MysqlConfig>,
@@ -186,6 +187,27 @@ pub struct UdpConfig {
 pub struct IcmpConfig {
 	pub host: String,
 	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DnsConfig {
+	/// DNS server hostname or IP
+	pub host: String,
+	/// DNS server port (default: 53)
+	pub port: Option<u16>,
+	/// Domain name to look up (e.g. "google.com")
+	pub query: String,
+	/// Record type: A, AAAA, CAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, ANY (default: "A")
+	pub record_type: Option<String>,
+	/// Transport protocol: "udp" or "tcp" (default: "udp")
+	pub protocol: Option<String>,
+	/// Query timeout in seconds (default: 3)
+	pub timeout: Option<u64>,
+	/// Require at least one answer record for success (default: true)
+	pub require_answer: Option<bool>,
+	/// Optional substring that must appear in at least one answer record
+	pub expected_value: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

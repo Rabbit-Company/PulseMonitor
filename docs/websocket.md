@@ -357,6 +357,23 @@ Each monitor has one service type:
 }
 ```
 
+**DNS:**
+
+```json
+{
+	"dns": {
+		"host": "8.8.8.8",
+		"port": 53,
+		"query": "google.com",
+		"recordType": "A",
+		"protocol": "udp",
+		"timeout": 3,
+		"requireAnswer": true,
+		"expectedValue": ""
+	}
+}
+```
+
 **SMTP:**
 
 ```json

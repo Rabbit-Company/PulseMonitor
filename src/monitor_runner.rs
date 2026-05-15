@@ -1,5 +1,6 @@
 use crate::heartbeat::send_heartbeat;
 use crate::services::{
+	dns::is_dns_online,
 	http::is_http_online,
 	icmp::is_icmp_online,
 	imap::is_imap_online,
@@ -346,6 +347,8 @@ async fn run_single_check(
 			is_udp_online(monitor).await
 		} else if monitor.icmp.is_some() {
 			is_icmp_online(monitor).await
+		} else if monitor.dns.is_some() {
+			is_dns_online(monitor).await
 		} else if monitor.smtp.is_some() {
 			is_smtp_online(monitor).await
 		} else if monitor.imap.is_some() {

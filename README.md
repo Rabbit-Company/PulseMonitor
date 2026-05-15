@@ -1,18 +1,18 @@
 # PulseMonitor
 
-A high-performance Rust monitoring agent that sends heartbeat pulses to uptime monitoring services. Supports HTTP, WebSocket, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, SNMP, Minecraft Java and Minecraft Bedrock monitoring.
+A high-performance Rust monitoring agent that sends heartbeat pulses to uptime monitoring services. Supports HTTP, WebSocket, TCP, UDP, ICMP, DNS, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, SNMP, Minecraft Java and Minecraft Bedrock monitoring.
 
 ## Features
 
-| Feature                | Description                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Multi-Protocol**     | Monitor HTTP, WS, TCP, UDP, ICMP, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, SNMP, Minecraft Java/Bedrock |
-| **Dual Mode**          | File-based config or centralized WebSocket management                                                       |
-| **Reliable Delivery**  | Pulse retry queue with per-pulse acknowledgment ensures no data loss                                        |
-| **Auto-Reconnect**     | Automatic reconnection with HTTP fallback when WebSocket is unavailable                                     |
-| **Live Updates**       | Real-time configuration changes without restart (WebSocket mode)                                            |
-| **Template Variables** | Dynamic placeholders for latency, timestamps, and custom metrics in heartbeat URLs                          |
-| **Low Resource**       | Efficient Rust implementation with minimal overhead                                                         |
+| Feature                | Description                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Multi-Protocol**     | Monitor HTTP, WS, TCP, UDP, ICMP, DNS, SMTP, IMAP, MySQL, MSSQL, PostgreSQL, Redis, SNMP, Minecraft Java/Bedrock |
+| **Dual Mode**          | File-based config or centralized WebSocket management                                                            |
+| **Reliable Delivery**  | Pulse retry queue with per-pulse acknowledgment ensures no data loss                                             |
+| **Auto-Reconnect**     | Automatic reconnection with HTTP fallback when WebSocket is unavailable                                          |
+| **Live Updates**       | Real-time configuration changes without restart (WebSocket mode)                                                 |
+| **Template Variables** | Dynamic placeholders for latency, timestamps, and custom metrics in heartbeat URLs                               |
+| **Low Resource**       | Efficient Rust implementation with minimal overhead                                                              |
 
 ## Related Projects
 

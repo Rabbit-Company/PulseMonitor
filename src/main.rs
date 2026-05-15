@@ -12,6 +12,7 @@ mod pulse_queue;
 mod utils;
 mod ws_client;
 mod services {
+	pub mod dns;
 	pub mod http;
 	pub mod icmp;
 	pub mod imap;
