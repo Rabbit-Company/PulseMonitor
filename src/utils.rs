@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: &str = "v3.16.0";
+pub const VERSION: &str = "v3.17.0";
 
 #[derive(Default, Debug, Clone)]
 pub struct CheckResult {
