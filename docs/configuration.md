@@ -36,7 +36,7 @@ debug = false            # Enable verbose logging (optional)
 [monitors.heartbeat]     # Where to send success notifications
 # ... heartbeat config
 
-[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, dns, smtp, imap, mysql, mssql, postgresql, redis, minecraft-java, minecraft-bedrock
+[monitors.SERVICE]       # One of: http, ws, tcp, udp, icmp, dns, smtp, imap, mysql, mssql, postgresql, redis, snmp, minecraft-java, minecraft-bedrock, gamedig
 # ... service-specific config
 ```
 
@@ -292,6 +292,18 @@ timeout = 3              # Seconds (default: 3)
 
 Populates `{custom1}` / `{playerCount}` with the current online player count. See [Minecraft Bedrock](services.md#minecraft-bedrock) for details.
 
+### Game Server Monitoring (GameDig)
+
+```toml
+[monitors.gamedig]
+game = "valheim"         # GameDig game ID (or use `protocol` for unlisted games)
+host = "game.example.com"
+port = 2457              # Query port (default: the game's default port)
+timeout = 5              # Seconds (default: 5)
+```
+
+Populates `{custom1}` / `{playerCount}` with the online player count, `{custom2}` / `{maxPlayers}` with the player limit and, when the game reports it, `{custom3}` / `{botCount}` with the bot count. See [GameDig](services.md#gamedig) for the list of supported games and protocols.
+
 ## Complete Configuration Example
 
 ```toml
@@ -424,7 +436,7 @@ With default settings, a pulse will be retried for up to 5 minutes (300 retries 
 | ----------------------------- | --------------------------------------------- | ------- |
 | `PULSE_MAX_CONCURRENT_CHECKS` | Maximum number of simultaneous service checks | `5000`  |
 
-This setting limits how many monitor checks can run concurrently, preventing resource exhaustion (file descriptors, CPU, network). Increase if you have many monitors and ample system resources; decrease if you experience resource constraints.
+This setting limits how many monitor checks can run concurrently, preventing resource exhaustion (file descriptors, CPU, network). Increase if you have many monitors and ample system resources (decrease if you experience resource constraints).
 
 ## Configuration Priority
 

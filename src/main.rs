@@ -13,6 +13,7 @@ mod utils;
 mod ws_client;
 mod services {
 	pub mod dns;
+	pub mod gamedig;
 	pub mod http;
 	pub mod icmp;
 	pub mod imap;

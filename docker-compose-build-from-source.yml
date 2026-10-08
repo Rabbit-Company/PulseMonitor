@@ -2,8 +2,11 @@ services:
   pulsemonitor:
     build: .
     container_name: pulsemonitor
-    volumes:
-      - ./config.toml:/config.toml
+    #    volumes:
+    #      - ./config.toml:/config.toml
+    environment:
+      - PULSE_SERVER_URL=http://10.1.255.203:3000
+      - PULSE_TOKEN=tk_pulse_monitor_eu_central_1
     restart: unless-stopped
     ulimits:
       nproc: 65535

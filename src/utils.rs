@@ -49,8 +49,11 @@ pub fn resolve_custom_placeholders(
 		placeholders.push((format!("{{{}}}", key), value_str));
 	}
 
-	// Minecraft alias
-	if monitor.minecraft_java.is_some() || monitor.minecraft_bedrock.is_some() {
+	// Player count alias
+	if monitor.minecraft_java.is_some()
+		|| monitor.minecraft_bedrock.is_some()
+		|| monitor.gamedig.is_some()
+	{
 		let player_count = result
 			.get("playerCount")
 			.or_else(|| result.get("custom1"))
@@ -59,9 +62,18 @@ pub fn resolve_custom_placeholders(
 		placeholders.push(("{playerCount}".to_string(), player_count));
 	}
 
+	// GameDig aliases are always emitted (empty string if the game does not report them)
+	if monitor.gamedig.is_some() {
+		for key in &["maxPlayers", "botCount"] {
+			let value_str = result.get(key).map(|v| v.to_string()).unwrap_or_default();
+			placeholders.push((format!("{{{}}}", key), value_str));
+		}
+	}
+
 	// Emit all other arbitrary keys from the result
 	for (key, value) in &result.values {
 		match key.as_str() {
+			"maxPlayers" | "botCount" if monitor.gamedig.is_some() => continue,
 			"latency" | "custom1" | "custom2" | "custom3" | "playerCount" => continue,
 			_ => {
 				placeholders.push((format!("{{{}}}", key), value.to_string()));
@@ -106,6 +118,7 @@ pub struct Monitor {
 	pub minecraft_java: Option<MinecraftJavaConfig>,
 	#[serde(rename = "minecraft-bedrock")]
 	pub minecraft_bedrock: Option<MinecraftBedrockConfig>,
+	pub gamedig: Option<GamedigConfig>,
 	pub snmp: Option<SnmpConfig>,
 }
 
@@ -238,6 +251,22 @@ pub struct MinecraftJavaConfig {
 pub struct MinecraftBedrockConfig {
 	pub host: String,
 	pub port: Option<u16>,
+	pub timeout: Option<u64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GamedigConfig {
+	/// GameDig game ID (e.g. "valheim", "rust", "minecraftjava")
+	pub game: Option<String>,
+	/// Generic query protocol for games without an ID:
+	/// valve, gamespy1, gamespy2, gamespy3, quake1, quake2, quake3, unreal2
+	pub protocol: Option<String>,
+	/// Game server hostname or IP
+	pub host: String,
+	/// Query port (default: the game's default port, required with `protocol`)
+	pub port: Option<u16>,
+	/// Query timeout in seconds (default: 5)
 	pub timeout: Option<u64>,
 }
 

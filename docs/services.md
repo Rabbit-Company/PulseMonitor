@@ -1,6 +1,6 @@
 # Service Monitors
 
-PulseMonitor supports 15 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
+PulseMonitor supports 16 different service types. Each monitor checks a service's availability and sends a heartbeat on success.
 
 ## Overview
 
@@ -21,6 +21,7 @@ PulseMonitor supports 15 different service types. Each monitor checks a service'
 | [SNMP](#snmp)                           | SNMP v1/v2c/v3   | 3s              |
 | [Minecraft Java](#minecraft-java)       | MC Java Protocol | 3s              |
 | [Minecraft Bedrock](#minecraft-bedrock) | MC Bedrock (UDP) | 3s              |
+| [GameDig](#gamedig)                     | Game queries     | 5s              |
 
 ## HTTP
 
@@ -1088,3 +1089,239 @@ host = "192.168.1.100"
 port = 19133
 timeout = 10
 ```
+
+---
+
+## GameDig
+
+Monitor game servers by querying them with their own query protocol, using the Rust port of [GameDig](https://github.com/gamedig/rust-gamedig). Unlike a ping or an open TCP port, a successful query confirms the game server itself is answering. Returns query latency, the online player count and the player limit.
+
+### Configuration
+
+```toml
+[monitors.gamedig]
+game = "valheim"             # GameDig game ID (see Supported Games)
+host = "game.example.com"    # Required: Server hostname or IP
+port = 2457                  # Optional: Query port (default: the game's default port)
+timeout = 5                  # Optional: Seconds (default: 5)
+```
+
+For a game that is not in the list, set `protocol` instead of `game`:
+
+```toml
+[monitors.gamedig]
+protocol = "valve"           # Generic query protocol (see Generic Protocols)
+host = "game.example.com"
+port = 27016                 # Required when using `protocol`
+```
+
+### Options
+
+| Option     | Type    | Default        | Description                                                 |
+| ---------- | ------- | -------------- | ----------------------------------------------------------- |
+| `game`     | string  | -              | GameDig game ID. Exactly one of `game` or `protocol` is set |
+| `protocol` | string  | -              | Generic query protocol for games without an ID              |
+| `host`     | string  | -              | Server hostname or IP address                               |
+| `port`     | integer | game's default | Query port. Required with `protocol`                        |
+| `timeout`  | integer | 5              | Query timeout in seconds                                    |
+
+> **Note:** The query port is often different from the port players connect to. For example, Arma 3 answers on the game port + 1, and ARK and Conan Exiles usually answer on 27015. Check your game server's configuration if the default does not answer.
+
+### Success Criteria
+
+- The server answers the game query within the timeout
+- The response is a valid reply for the selected game or protocol
+
+### Custom Metrics
+
+GameDig monitors populate the following custom metrics, available as template placeholders in heartbeat URLs and headers:
+
+| Placeholder     | Metric    | Description                         |
+| --------------- | --------- | ----------------------------------- |
+| `{custom1}`     | `custom1` | Current online player count         |
+| `{playerCount}` | `custom1` | Alias for `{custom1}`               |
+| `{custom2}`     | `custom2` | Maximum number of players           |
+| `{maxPlayers}`  | `custom2` | Alias for `{custom2}`               |
+| `{custom3}`     | `custom3` | Bot count, when the game reports it |
+| `{botCount}`    | `custom3` | Alias for `{custom3}`               |
+
+`{latency}` is the time the query took. Some protocols need several round trips for one query, so it is not directly comparable to an ICMP ping.
+
+### Generic Protocols
+
+Games without an ID can still be monitored when they speak one of these query protocols:
+
+| Protocol   | Used by                                                                 |
+| ---------- | ----------------------------------------------------------------------- |
+| `valve`    | Steam server queries (A2S), used by most games with a Steam server list |
+| `gamespy1` | GameSpy 1                                                               |
+| `gamespy2` | GameSpy 2                                                               |
+| `gamespy3` | GameSpy 3                                                               |
+| `quake1`   | Quake 1                                                                 |
+| `quake2`   | Quake 2                                                                 |
+| `quake3`   | Quake 3                                                                 |
+| `unreal2`  | Unreal Engine 2                                                         |
+
+### Limitations
+
+- The Steam app ID a server reports is not checked. A game ID selects the query protocol and default port. Any server that answers that protocol on the configured port counts as up.
+- A server whose reply cannot be parsed is reported as down. This affects a small number of servers, for example ones whose name is not valid UTF-8.
+- UDP-based queries, which is most games, only work over IPv4. When a hostname resolves to both IPv4 and IPv6, the IPv4 address is used.
+- Games that publish their status through an HTTP feed or need credentials, such as Farming Simulator, are not supported. Use an [HTTP](#http) monitor against the game's status feed for those.
+- `minecraftjava`, `minecraftbedrock`, `minecraftpocket` and `minecraft` use the same client as the [Minecraft Java](#minecraft-java) and [Minecraft Bedrock](#minecraft-bedrock) monitors. `minecraft` tries Java first and then Bedrock.
+
+### Examples
+
+**Valheim with player metrics:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Valheim"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&players={playerCount}&maxPlayers={maxPlayers}"
+
+[monitors.gamedig]
+game = "valheim"
+host = "valheim.example.com"
+```
+
+**Minecraft Java:**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Minecraft"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&players={playerCount}"
+
+[monitors.gamedig]
+game = "minecraftjava"
+host = "mc.example.com"
+```
+
+**Space Engineers (no game ID, Steam query protocol):**
+
+```toml
+[[monitors]]
+enabled = true
+name = "Space Engineers"
+interval = 30
+
+[monitors.heartbeat]
+method = "GET"
+url = "https://uptime.example.com/api/push/TOKEN?latency={latency}&players={playerCount}"
+
+[monitors.gamedig]
+protocol = "valve"
+host = "se.example.com"
+port = 27016
+```
+
+### Supported Games
+
+| Game ID                | Game                                | Default Port |
+| ---------------------- | ----------------------------------- | ------------ |
+| `sdtd`                 | 7 Days to Die                       | 26900        |
+| `abioticfactor`        | Abiotic Factor                      | 27015        |
+| `aoc`                  | Age of Chivalry                     | 27015        |
+| `alienswarm`           | Alien Swarm                         | 27015        |
+| `asrd`                 | Alien Swarm: Reactive Drop          | 2304         |
+| `avp2010`              | Aliens vs. Predator 2010            | 27015        |
+| `aapg`                 | America's Army: Proving Grounds     | 27020        |
+| `ase`                  | ARK: Survival Evolved               | 27015        |
+| `a2oa`                 | ARMA 2: Operation Arrowhead         | 2304         |
+| `arma3`                | ARMA 3                              | 2303         |
+| `armareforger`         | Arma Reforger                       | 17777        |
+| `atlas`                | ATLAS                               | 57561        |
+| `avorion`              | Avorion                             | 27020        |
+| `ballisticoverkill`    | Ballistic Overkill                  | 27016        |
+| `barotrauma`           | Barotrauma                          | 27016        |
+| `basedefense`          | Base Defense                        | 27015        |
+| `battalion1944`        | Battalion 1944                      | 7780         |
+| `battlefield1942`      | Battlefield 1942                    | 23000        |
+| `blackmesa`            | Black Mesa                          | 27015        |
+| `brainbread2`          | BrainBread 2                        | 27015        |
+| `codbo3`               | Call Of Duty: Black Ops 3           | 27017        |
+| `codenamecure`         | Codename CURE                       | 27015        |
+| `colonysurvival`       | Colony Survival                     | 27004        |
+| `conanexiles`          | Conan Exiles                        | 27015        |
+| `cscz`                 | Counter Strike: Condition Zero      | 27015        |
+| `counterstrike`        | Counter-Strike                      | 27015        |
+| `counterstrike2`       | Counter-Strike 2                    | 27015        |
+| `csgo`                 | Counter-Strike: Global Offensive    | 27015        |
+| `css`                  | Counter-Strike: Source              | 27015        |
+| `creativerse`          | Creativerse                         | 26901        |
+| `crysiswars`           | Crysis Wars                         | 64100        |
+| `dhe4445`              | Darkest Hour: Europe '44-'45 (2008) | 7758         |
+| `dod`                  | Day of Defeat                       | 27015        |
+| `dods`                 | Day of Defeat: Source               | 27015        |
+| `doi`                  | Day of Infamy                       | 27015        |
+| `devastation`          | Devastation (2003)                  | 7778         |
+| `dst`                  | Don't Starve Together               | 27016        |
+| `dab`                  | Double Action: Boogaloo             | 27015        |
+| `eco`                  | Eco                                 | 3000         |
+| `enshrouded`           | Enshrouded                          | 15637        |
+| `ffow`                 | Frontlines: Fuel of War             | 5478         |
+| `garrysmod`            | Garry's Mod                         | 27016        |
+| `hl2d`                 | Half-Life 2 Deathmatch              | 27015        |
+| `hlds`                 | Half-Life Deathmatch: Source        | 27015        |
+| `hce`                  | Halo: Combat Evolved                | 2302         |
+| `hll`                  | Hell Let Loose                      | 26420        |
+| `insurgency`           | Insurgency                          | 27015        |
+| `imic`                 | Insurgency: Modern Infantry Combat  | 27015        |
+| `insurgencysandstorm`  | Insurgency: Sandstorm               | 27131        |
+| `jc2m`                 | Just Cause 2: Multiplayer           | 7777         |
+| `killingfloor`         | Killing Floor                       | 7708         |
+| `l4d`                  | Left 4 Dead                         | 27015        |
+| `l4d2`                 | Left 4 Dead 2                       | 27015        |
+| `mindustry`            | Mindustry                           | 6567         |
+| `minecraft`            | Minecraft                           | 25565        |
+| `minecraftbedrock`     | Minecraft (bedrock)                 | 19132        |
+| `minecraftjava`        | Minecraft (java)                    | 25565        |
+| `minecraftlegacy14`    | Minecraft (legacy 1.4)              | 25565        |
+| `minecraftlegacy16`    | Minecraft (legacy 1.6)              | 25565        |
+| `minecraftlegacyb18`   | Minecraft (legacy b1.8)             | 25565        |
+| `minecraftpocket`      | Minecraft (pocket)                  | 19132        |
+| `mordhau`              | Mordhau                             | 27015        |
+| `moe`                  | Myth Of Empires                     | 12888        |
+| `nla`                  | Nova-Life: Amboise                  | 27015        |
+| `onset`                | Onset                               | 7776         |
+| `ohd`                  | Operation: Harsh Doorstop           | 27005        |
+| `pvak2`                | Pirates, Vikings, and Knights II    | 27015        |
+| `pixark`               | PixARK                              | 27015        |
+| `postscriptum`         | Post Scriptum                       | 10037        |
+| `projectzomboid`       | Project Zomboid                     | 16261        |
+| `quake1`               | Quake 1                             | 27500        |
+| `quake2`               | Quake 2                             | 27910        |
+| `q3a`                  | Quake 3 Arena                       | 27960        |
+| `redorchestra`         | Red Orchestra                       | 7759         |
+| `risingworld`          | Rising World                        | 4254         |
+| `ror2`                 | Risk of Rain 2                      | 27016        |
+| `rust`                 | Rust                                | 27015        |
+| `savage2`              | Savage 2                            | 11235        |
+| `serioussam`           | Serious Sam                         | 25601        |
+| `sof2`                 | Soldier of Fortune 2                | 20100        |
+| `soulmask`             | Soulmask                            | 27015        |
+| `squad`                | Squad                               | 27165        |
+| `starbound`            | Starbound                           | 21025        |
+| `sco`                  | Sven Co-op                          | 27015        |
+| `teamfortress2`        | Team Fortress 2                     | 27015        |
+| `tfc`                  | Team Fortress Classic               | 27015        |
+| `theforest`            | The Forest                          | 27016        |
+| `thefront`             | The Front                           | 27015        |
+| `theship`              | The Ship                            | 27015        |
+| `unrealtournament`     | Unreal Tournament                   | 7778         |
+| `unrealtournament2003` | Unreal Tournament 2003              | 7758         |
+| `unrealtournament2004` | Unreal Tournament 2004              | 7778         |
+| `unturned`             | Unturned                            | 27015        |
+| `vrising`              | V Rising                            | 27016        |
+| `valheim`              | Valheim                             | 2457         |
+| `warsow`               | Warsow                              | 44400        |
+| `zps`                  | Zombie Panic: Source                | 27015        |

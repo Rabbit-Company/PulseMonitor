@@ -492,7 +492,20 @@ Each monitor has one service type:
 }
 ```
 
-> **Note:** Minecraft Java and Bedrock monitors populate `custom1` in push messages with the current online player count.
+**GameDig (game servers):**
+
+```json
+{
+	"gamedig": {
+		"game": "valheim",
+		"host": "game.example.com",
+		"port": 2457,
+		"timeout": 5
+	}
+}
+```
+
+> **Note:** Minecraft Java and Bedrock monitors populate `custom1` in push messages with the current online player count. GameDig monitors populate `custom1` with the online player count, `custom2` with the player limit and `custom3` with the bot count when the game reports it.
 
 ## Connection Management
 

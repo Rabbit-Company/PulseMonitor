@@ -1,6 +1,7 @@
 use crate::heartbeat::send_heartbeat;
 use crate::services::{
 	dns::is_dns_online,
+	gamedig::is_gamedig_online,
 	http::is_http_online,
 	icmp::is_icmp_online,
 	imap::is_imap_online,
@@ -365,6 +366,8 @@ async fn run_single_check(
 			is_minecraft_java_online(monitor).await
 		} else if monitor.minecraft_bedrock.is_some() {
 			is_minecraft_bedrock_online(monitor).await
+		} else if monitor.gamedig.is_some() {
+			is_gamedig_online(monitor).await
 		} else if monitor.snmp.is_some() {
 			is_snmp_online(monitor).await
 		} else {
