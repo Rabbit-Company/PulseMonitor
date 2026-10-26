@@ -1,0 +1,50 @@
+name: Publish binaries on Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build and publish ${{ matrix.asset }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            asset: pulsemonitor-x86_64-musl
+          - target: x86_64-unknown-linux-gnu
+            asset: pulsemonitor-x86_64-gnu
+          - target: aarch64-unknown-linux-musl
+            asset: pulsemonitor-aarch64-musl
+          - target: aarch64-unknown-linux-gnu
+            asset: pulsemonitor-aarch64-gnu
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install cross
+        run: cargo install cross
+
+      - name: Build binary
+        env:
+          TARGET: ${{ matrix.target }}
+        run: cross build --locked --target "$TARGET" --release
+
+      - name: Upload binary to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET: ${{ matrix.target }}
+          ASSET: ${{ matrix.asset }}
+        run: |
+          cp "target/$TARGET/release/pulsemonitor" "$ASSET"
+          gh release upload "$RELEASE_TAG" "$ASSET" --repo "$REPOSITORY"

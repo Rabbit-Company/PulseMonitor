@@ -33,7 +33,7 @@ jobs:
       - name: Build with cross
         run: cross build --target ${{ matrix.target }} --release
 
-      - name: Upload release artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
