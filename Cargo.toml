@@ -1,6 +1,6 @@
 [package]
 name = "pulsemonitor"
-version = "3.17.0"
+version = "3.18.0"
 authors = ["Rabbit Company LLC <info@rabbit-company.com>"]
 description = "Simple pulse monitor"
 edition = "2024"
@@ -35,13 +35,23 @@ serde_json = "1.0"
 dotenvy = "0.15"
 
 # HTTP
+base64 = "0.22"
+percent-encoding = "2"
 reqwest = { version = "0.13", default-features = false, features = [
 	"rustls",
 	"hickory-dns"
 ] }
+bytes = "1"
+http = "1"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "ring", "rustls-platform-verifier", "tls12"] }
+hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
+tower-service = "0.3"
 
 # DNS
 hickory-proto = { version = "0.26", default-features = false }
+hickory-resolver = "0.26"
 
 # WebSocket
 tokio-tungstenite = { version = "0.30", default-features = false, features = [
