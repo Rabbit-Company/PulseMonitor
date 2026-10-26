@@ -109,3 +109,6 @@ snmp2 = { version = "0.5", features = ["v3", "tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 chrono = "0.4"
 uuid = { version = "1.27", features = ["v4"] }
+
+[dev-dependencies]
+tokio = { version = "1.53", features = ["test-util"] }

@@ -54,7 +54,7 @@ headers = [                                 # Optional: Custom headers
 
 - HTTP response status code is 2xx (200-299)
 
-When a hostname resolves to multiple addresses, direct HTTP checks stagger TCP connection attempts by 250 ms and use the first connected address. At most four attempts run at once, each with a one second connect timeout. The configured `timeout` limits the entire check, including DNS, TLS, redirects, and the response body when JSON paths are configured. Each connection race sends the HTTP request only to its winning address. When a proxy environment variable is set for the URL scheme, the check uses the proxy client's connection behavior instead.
+When a hostname resolves to multiple addresses, direct HTTP checks stagger TCP connection attempts by 250 ms while earlier attempts are still pending. If an attempt fails, the next address is tried after a minimum 10 ms gap between connection attempts. The first connected address wins. At most four attempts run at once, each with a one second connect timeout. The configured `timeout` limits the entire check, including DNS, TLS, redirects, and the response body when JSON paths are configured. Each connection race sends the HTTP request only to its winning address. When a proxy environment variable is set for the URL scheme, the check uses the proxy client's connection behavior instead.
 
 ### Custom Metrics
 

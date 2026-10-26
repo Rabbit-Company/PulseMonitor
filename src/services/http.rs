@@ -33,7 +33,7 @@ use tracing::{debug, warn};
 const DEFAULT_HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 const DEFAULT_CONNECT_TIMEOUT: Duration = Duration::from_secs(1);
 const CONNECTION_STAGGER: Duration = Duration::from_millis(250);
-const MIN_CONNECTION_STAGGER: Duration = Duration::from_millis(100);
+const MIN_CONNECTION_STAGGER: Duration = Duration::from_millis(10);
 const MAX_IN_FLIGHT_CONNECTS: usize = 4;
 
 type RacingHttpsConnector = HttpsConnector<RacingConnector>;
@@ -163,7 +163,10 @@ where
 					Ok(socket) => return Ok(socket),
 					Err(error) => {
 						last_error = Some(error);
-						next_launch = last_launch.map_or_else(time::Instant::now, |launched| (launched + MIN_CONNECTION_STAGGER).max(time::Instant::now()));
+						// Retry promptly without launching attempts less than 10 ms apart.
+						next_launch = last_launch.map_or_else(time::Instant::now, |launched| {
+							(launched + MIN_CONNECTION_STAGGER).max(time::Instant::now())
+						});
 					}
 				}
 			}
@@ -457,8 +460,26 @@ mod tests {
 		let start = Instant::now();
 		let socket = race_tcp(vec![dead, dead, working]).await.unwrap();
 		assert_eq!(socket.peer_addr().unwrap(), working);
-		assert!(start.elapsed() >= Duration::from_millis(180));
 		assert!(start.elapsed() < Duration::from_secs(2));
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn failed_connections_use_only_the_minimum_stagger() {
+		let addresses = (1..=3)
+			.map(|port| SocketAddr::from(([127, 0, 0, 1], port)))
+			.collect();
+		let start = time::Instant::now();
+		let winner = race_connect(addresses, |address| async move {
+			if address.port() < 3 {
+				Err(io::ErrorKind::ConnectionRefused.into())
+			} else {
+				Ok(address)
+			}
+		})
+		.await
+		.unwrap();
+		assert_eq!(winner.port(), 3);
+		assert_eq!(start.elapsed(), MIN_CONNECTION_STAGGER * 2);
 	}
 
 	#[tokio::test]
